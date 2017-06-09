@@ -1,0 +1,14 @@
+#IncludeRegexLine: ^[ 	]*#[ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/drstrange/GSOC/main.cpp
+boostAlt/numeric/ublas/matrix.hpp
+-
+boostAlt/numeric/ublas/io.hpp
+-
+
