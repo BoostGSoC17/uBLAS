@@ -1,6 +1,6 @@
-#include <boostAlt/numeric/ublas/matrix.hpp>
-#include <boostAlt/numeric/ublas/io.hpp>
-//#include <boost/numeric/ublas/storage.hpp>
+#include <boost/numeric/ublas/matrix.hpp>
+#include <boost/numeric/ublas/io.hpp>
+#include <boost/numeric/ublas/storage.hpp>
 
 int main () {
     using namespace boost::numeric::ublas;
@@ -26,5 +26,5 @@ int main () {
     //tmp = prod(matrix<int>(prod(B,C)), X);
     tmp = prod(A,B);
 //    tmp = A + X;
-    std::cout << A << std::endl << X << std::endl << tmp;// << std::endl << tmp;
+    std::cout << A << std::endl << X << std::endl << tmp << std::endl;// << std::endl << tmp;
 }

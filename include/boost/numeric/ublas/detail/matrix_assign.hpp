@@ -16,6 +16,7 @@
 #include <boost/numeric/ublas/traits.hpp>
 // Required for make_conformant storage
 #include <vector>
+#include <algorithm>
 
 // Iterators based on ideas of Jeremy Siek
 
@@ -575,24 +576,196 @@ namespace detail {
             ++ it2, ++ it2e;
         }
     }
+
+    template<typename T>
+    void Matrix_Multiply(T &A, T &B, T &C){
+        for(int i=0;i<2;i++){
+            for(int j=0;j<2;j++){
+                C[i][j] = 0;
+                for(int k=0; k<2; k++){
+                    C[i][j] = C[i][j] + A[i][k]*B[k][j];
+                }
+            }
+        }
+    }
+
+    template<typename T>
+    void Matrix_Add(int N, T &X, T &Y, T &Z){
+        for(int i=0; i<N; i++){
+            for(int j=0; j<N; j++){
+                Z[i][j] = X[i][j] + Y[i][j];
+            }
+        }
+    }
+
+    template<typename T>
+    void Matrix_Sub(int N, T &X, T &Y, T &Z){
+        for(int i=0; i<N; i++){
+            for(int j=0; j<N; j++){
+                Z[i][j] = X[i][j] - Y[i][j];
+            }
+        }
+    }
+
+    template<typename T>
+    void Strassen(int N, std::vector<T> &A, std::vector<T> &B, std::vector<T> &C){
+
+        if(N == 2) {
+            Matrix_Multiply(A, B, C);
+            return;
+        }
+
+        std::vector<T> A11(N,T(N)), A12(N,T(N)), A21(N,T(N)), A22(N,T(N));
+        std::vector<T> B11(N,T(N)), B12(N,T(N)), B21(N,T(N)), B22(N,T(N));
+        std::vector<T> C11(N,T(N)), C12(N,T(N)), C21(N,T(N)), C22(N,T(N));
+        std::vector<T> P1(N,T(N)), P2(N,T(N)), P3(N,T(N)), P4(N,T(N)),P5(N,T(N)), P6(N,T(N)), P7(N,T(N));
+        std::vector<T> AA(N,T(N)), BB(N,T(N));
+
+        int mid = N>>1;
+        for(int i=0; i<N; i++){
+            for(int j=0;j<N;j++){
+                if(i<mid && j<mid)
+                    A11[i][j] = A[i][j];
+                else if(i<mid)
+                    A12[i][j-mid] = A[i][j];
+                else if(i>=mid && j<mid)
+                    A21[i-mid][j] = A[i][j];
+                else
+                    A22[i-mid][j-mid] = A[i][j];
+
+                if(i<mid && j<mid)
+                    B11[i][j] = B[i][j];
+                else if(i<mid)
+                    B12[i][j-mid] = B[i][j];
+                else if(i>=mid && j<mid)
+                    B21[i-mid][j] = B[i][j];
+                else
+                    B22[i-mid][j-mid] = B[i][j];
+            }
+        }
+
+        Matrix_Add(N>>1, A11, A22, AA);
+        Matrix_Add(N>>1, B11, B22, BB);
+        Strassen(N>>1, AA, BB, P1);
+
+        Matrix_Add(N>>1, A21, A22, AA);
+        Strassen(N>>1, AA, B11, P2);
+
+        Matrix_Sub(N>>1, B12, B22, BB);
+        Strassen(N>>1, A11, BB, P3);
+
+        //Calculate M4 = A3 × (B2 - B0)
+        Matrix_Sub((N>>1), B21, B11, BB);
+        Strassen((N>>1), A22, BB, P4);
+
+        //Calculate M5 = (A0 + A1) × B3
+        Matrix_Add((N>>1), A11, A12, AA);
+        Strassen((N>>1), AA, B22, P5);
+
+        //Calculate M6 = (A2 - A0) × (B0 + B1)
+        Matrix_Sub((N>>1), A21, A11, AA);
+        Matrix_Add((N>>1), B11, B12, BB);
+        Strassen((N>>1), AA, BB, P6);
+
+        //Calculate M7 = (A1 - A3) × (B2 + B3)
+        Matrix_Sub((N>>1), A12, A22, AA);
+        Matrix_Add((N>>1), B21, B22, BB);
+        Strassen((N>>1), AA, BB, P7);
+
+        //Calculate C0 = M1 + M4 - M5 + M7
+        Matrix_Add((N>>1), P1, P4, AA);
+        Matrix_Sub((N>>1), P7, P5, BB);
+        Matrix_Add((N>>1), AA, BB, C11);
+
+        //Calculate C1 = M3 + M5
+        Matrix_Add((N>>1), P3, P5, C12);
+
+        //Calculate C2 = M2 + M4
+        Matrix_Add((N>>1), P2, P4, C21);
+
+        //Calculate C3 = M1 - M2 + M3 + M6
+        Matrix_Sub((N>>1), P1, P2, AA);
+        Matrix_Add((N>>1), P3, P6, BB);
+        Matrix_Add((N>>1), AA, BB, C22);
+
+        //Set the result to C[][N]
+        for(int i=0; i<N; i++) {
+           for(int j=0; j<N; j++) {
+              if(i<mid && j<mid)
+                C[i][j] = C11[i][j];
+              else if(i<mid)
+                C[i][j] = C12[i][j-mid];
+              else if(i>=mid && j<mid)
+                C[i][j] = C21[i-mid][j];
+              else
+                C[i][j] = C22[i-mid][j-mid];
+           }
+        }
+
+        A11.clear(); A12.clear(); A21.clear(); A22.clear();
+        B11.clear(); B12.clear(); B21.clear(); B22.clear();
+        C11.clear(); C12.clear(); C21.clear(); C22.clear();
+        P1.clear(); P2.clear(); P3.clear(); P4.clear(); P5.clear(); P6.clear(); P7.clear();
+        AA.clear(); BB.clear();
+    }
+
+    template<typename T>
+    T getSize(T a, T b, T c, T d) {
+        T Max = std::max(a, std::max(b, std::max(c,d)));
+        T Size = 1;
+        while(Size < Max)
+            Size <<= 1;
+        return Size;
+    }
+ 
     // Explicitly indexing row major
     template<template <class T1, class T2> class F, class M, class E>
     // BOOST_UBLAS_INLINE This function seems to be big. So we do not let the compiler inline it.
     void indexing_matrix_assign (M &m, const matrix_expression<E> &e, row_major_tag) {
         typedef F<typename M::reference, typename E::value_type> functor_type;
         typedef typename M::size_type size_type;
+        typedef typename M::value_type type;
+        
         size_type size1 (BOOST_UBLAS_SAME (m.size1 (), e ().size1 ()));
         size_type size2 (BOOST_UBLAS_SAME (m.size2 (), e ().size2 ()));
+        
+        auto E1 = e().expression1();
+        auto E2 = e().expression2();
+        
+        size_type size = getSize(E1.size1(), E1.size2(), E2.size1(), E2.size2());
+        //std::cout << size << "\n";
+        
+        std::vector<std::vector<type> > A(size, std::vector<type>(size, 0));
+        std::vector<std::vector<type> > B(size, std::vector<type>(size, 0));
+        std::vector<std::vector<type> > C(size, std::vector<type>(size, 0));
+
+        for(size_type i=0; i<E1.size1(); i++) {
+            for(size_type j=0; j<E1.size2(); j++) {
+                A[i][j] = E1(i,j);
+            }
+        }
+
+        for(size_type i=0; i<E2.size1(); i++) {
+            for(size_type j=0; j<E2.size2(); j++) {
+                B[i][j] = E2(i,j);
+            }
+        }
+
+        Strassen(size, A, B, C);
+
         for (size_type i = 0; i < size1; ++ i) {
 #ifndef BOOST_UBLAS_USE_DUFF_DEVICE
             for (size_type j = 0; j < size2; ++ j)
-                functor_type::apply (m (i, j), e () (i, j));
+                functor_type::apply (m (i, j), C[i][j]);
 #else
             size_type j (0);
             DD (size2, 2, r, (functor_type::apply (m (i, j), e () (i, j)), ++ j));
 #endif
         }
+        A.clear(); B.clear(); C.clear();
     }
+
+    
     // Explicitly indexing column major
     template<template <class T1, class T2> class F, class M, class E>
     // BOOST_UBLAS_INLINE This function seems to be big. So we do not let the compiler inline it.
