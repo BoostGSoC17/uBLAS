@@ -765,24 +765,52 @@ namespace detail {
         A.clear(); B.clear(); C.clear();
     }
 
-    
+
     // Explicitly indexing column major
     template<template <class T1, class T2> class F, class M, class E>
     // BOOST_UBLAS_INLINE This function seems to be big. So we do not let the compiler inline it.
     void indexing_matrix_assign (M &m, const matrix_expression<E> &e, column_major_tag) {
         typedef F<typename M::reference, typename E::value_type> functor_type;
         typedef typename M::size_type size_type;
+        typedef typename M::value_type type;
         size_type size2 (BOOST_UBLAS_SAME (m.size2 (), e ().size2 ()));
         size_type size1 (BOOST_UBLAS_SAME (m.size1 (), e ().size1 ()));
+
+        auto E1 = e().expression1();
+        auto E2 = e().expression2();
+        
+        size_type size = getSize(E1.size1(), E1.size2(), E2.size1(), E2.size2());
+        //std::cout << size << "\n";
+        
+        std::vector<std::vector<type> > A(size, std::vector<type>(size, 0));
+        std::vector<std::vector<type> > B(size, std::vector<type>(size, 0));
+        std::vector<std::vector<type> > C(size, std::vector<type>(size, 0));
+
+
+        for(size_type j=0; j<E1.size2(); j++) {
+            for(size_type i=0; i<E1.size1(); i++) {
+                A[i][j] = E1(i,j);
+            }
+        }
+
+        for(size_type j=0; j<E1.size2(); j++) {
+            for(size_type i=0; i<E1.size1(); i++) {
+                B[i][j] = E2(i,j);
+            }
+        }
+
+        Strassen(size, A, B, C);
+
         for (size_type j = 0; j < size2; ++ j) {
 #ifndef BOOST_UBLAS_USE_DUFF_DEVICE
             for (size_type i = 0; i < size1; ++ i)
-                functor_type::apply (m (i, j), e () (i, j));
+                functor_type::apply (m (i, j), C[i][j]);
 #else
             size_type i (0);
             DD (size1, 2, r, (functor_type::apply (m (i, j), e () (i, j)), ++ i));
 #endif
         }
+        A.clear(); B.clear(); C.clear();
     }
 
     // Dense (proxy) case
