@@ -13,6 +13,7 @@
 #ifndef _BOOST_UBLAS_FUNCTIONAL_
 #define _BOOST_UBLAS_FUNCTIONAL_
 
+#include <algorithm>
 #include <functional>
 
 #include <boost/core/ignore_unused.hpp>
@@ -1228,6 +1229,216 @@ namespace boost { namespace numeric { namespace ublas {
 #endif
             return t;
         }
+
+        template<typename T>
+        static BOOST_UBLAS_INLINE
+        void Trivial(T &A, T &B, T &C) {
+            int I = A.size(), K = A[0].size(), J = B[0].size();
+            for(int i=0; i<I; i++) {
+                for(int j=0; j<J; j++) {
+                    C[i][j] = 0;
+                    for(int k=0; k<K; k++) {
+                        C[i][j] += A[i][k] * B[k][j];
+                    }
+                }
+            }
+        }
+
+        template<typename T>
+        static BOOST_UBLAS_INLINE
+        void Matrix_Add(int N, T &X, T &Y, T &Z){
+            for(int i=0; i<N; i++){
+                for(int j=0; j<N; j++){
+                    Z[i][j] = X[i][j] + Y[i][j];
+                }
+            }
+        }
+
+        template<typename T>
+        static BOOST_UBLAS_INLINE
+        void Matrix_Sub(int N, T &X, T &Y, T &Z){
+            for(int i=0; i<N; i++){
+                for(int j=0; j<N; j++){
+                    Z[i][j] = X[i][j] - Y[i][j];
+                }
+            }
+        }
+
+        template<typename T>
+        static void Strassen(size_type N, std::vector<T> &A, std::vector<T> &B, std::vector<T> &C) {
+            if(N == 512) {
+                Trivial(A, B, C);
+                return;
+            } 
+
+            std::vector<T> A11(N,T(N)), A12(N,T(N)), A21(N,T(N)), A22(N,T(N));
+            std::vector<T> B11(N,T(N)), B12(N,T(N)), B21(N,T(N)), B22(N,T(N));
+            std::vector<T> C11(N,T(N)), C12(N,T(N)), C21(N,T(N)), C22(N,T(N));
+            std::vector<T> P1(N,T(N)), P2(N,T(N)), P3(N,T(N)), P4(N,T(N)),P5(N,T(N)), P6(N,T(N)), P7(N,T(N));
+            std::vector<T> AA(N,T(N)), BB(N,T(N));
+
+            size_type mid = N>>1;
+            for(size_type i=0; i<N; i++){
+                for(size_type j=0;j<N;j++){
+                    if(i<mid && j<mid)
+                        A11[i][j] = A[i][j];
+                    else if(i<mid)
+                        A12[i][j-mid] = A[i][j];
+                    else if(i>=mid && j<mid)
+                        A21[i-mid][j] = A[i][j];
+                    else
+                        A22[i-mid][j-mid] = A[i][j];
+
+                    if(i<mid && j<mid)
+                        B11[i][j] = B[i][j];
+                    else if(i<mid)
+                        B12[i][j-mid] = B[i][j];
+                    else if(i>=mid && j<mid)
+                        B21[i-mid][j] = B[i][j];
+                    else
+                        B22[i-mid][j-mid] = B[i][j];
+                }
+            }
+
+            Matrix_Add(N>>1, A11, A22, AA);
+            Matrix_Add(N>>1, B11, B22, BB);
+            Strassen(N>>1, AA, BB, P1);
+
+            Matrix_Add(N>>1, A21, A22, AA);
+            Strassen(N>>1, AA, B11, P2);
+
+            Matrix_Sub(N>>1, B12, B22, BB);
+            Strassen(N>>1, A11, BB, P3);
+
+            //Calculate M4 = A3 × (B2 - B0)
+            Matrix_Sub((N>>1), B21, B11, BB);
+            Strassen((N>>1), A22, BB, P4);
+
+            //Calculate M5 = (A0 + A1) × B3
+            Matrix_Add((N>>1), A11, A12, AA);
+            Strassen((N>>1), AA, B22, P5);
+
+            //Calculate M6 = (A2 - A0) × (B0 + B1)
+            Matrix_Sub((N>>1), A21, A11, AA);
+            Matrix_Add((N>>1), B11, B12, BB);
+            Strassen((N>>1), AA, BB, P6);
+
+            //Calculate M7 = (A1 - A3) × (B2 + B3)
+            Matrix_Sub((N>>1), A12, A22, AA);
+            Matrix_Add((N>>1), B21, B22, BB);
+            Strassen((N>>1), AA, BB, P7);
+
+            //Calculate C0 = M1 + M4 - M5 + M7
+            Matrix_Add((N>>1), P1, P4, AA);
+            Matrix_Sub((N>>1), P7, P5, BB);
+            Matrix_Add((N>>1), AA, BB, C11);
+
+            //Calculate C1 = M3 + M5
+            Matrix_Add((N>>1), P3, P5, C12);
+
+            //Calculate C2 = M2 + M4
+            Matrix_Add((N>>1), P2, P4, C21);
+
+            //Calculate C3 = M1 - M2 + M3 + M6
+            Matrix_Sub((N>>1), P1, P2, AA);
+            Matrix_Add((N>>1), P3, P6, BB);
+            Matrix_Add((N>>1), AA, BB, C22);
+
+            //Set the result to C[][N]
+            for(size_type i=0; i<N; i++) {
+               for(size_type j=0; j<N; j++) {
+                  if(i<mid && j<mid)
+                    C[i][j] = C11[i][j];
+                  else if(i<mid)
+                    C[i][j] = C12[i][j-mid];
+                  else if(i>=mid && j<mid)
+                    C[i][j] = C21[i-mid][j];
+                  else
+                    C[i][j] = C22[i-mid][j-mid];
+               }
+            }
+
+            A11.clear(); A12.clear(); A21.clear(); A22.clear();
+            B11.clear(); B12.clear(); B21.clear(); B22.clear();
+            C11.clear(); C12.clear(); C21.clear(); C22.clear();
+            P1.clear(); P2.clear(); P3.clear(); P4.clear(); P5.clear(); P6.clear(); P7.clear();
+            AA.clear(); BB.clear();
+        }
+
+        template<typename T>
+        static BOOST_UBLAS_INLINE
+        T getSize(T a, T b, T c, T d) {
+            T Max = std::max(a, std::max(b, std::max(c,d)));
+            T Size = 1;
+            while(Size < Max)
+                Size <<= 1;
+            return Size;
+        }
+
+        template<typename E1, typename E2, typename T>
+        static BOOST_UBLAS_INLINE
+        void assign_values(const matrix_expression<E1> &e1,
+                           const matrix_expression<E2> &e2,
+                           std::vector<T> &A, 
+                           std::vector<T> &B,
+                           std::vector<T> &C, 
+                           bool isLarge) {
+            if(isLarge) {
+                size_type size = getSize(e1().size1(), e1().size2(), e2().size1(), e2().size2());
+                A.resize(size, T(size, 0));
+                B.resize(size, T(size, 0));
+                C.resize(size, T(size, 0));
+            }
+            else {
+                A.resize(e1().size1(), T(e1().size2()));
+                B.resize(e2().size1(), T(e2().size2()));
+                C.resize(e1().size1(), T(e2().size2()));
+            }
+            for(size_type i=0; i<e1().size1(); i++) {
+                for(size_type j=0; j<e1().size2(); j++) {
+                    A[i][j] = e1 () (i,j);
+                }
+            }
+
+            for(size_type i=0; i<e2().size1(); i++) {
+                for(size_type j=0; j<e2().size2(); j++) {
+                    B[i][j] = e2 () (i,j);
+                }
+            }
+        }
+
+        template<typename E1, typename E2>
+        static BOOST_UBLAS_INLINE
+        bool check(const matrix_expression<E1> &e1,
+                   const matrix_expression<E2> &e2) {
+            typedef long long int lli;
+            lli operations = (lli) e1().size1() * (lli) e1().size2() * (lli) e2().size2();
+            if(operations > (1<<28)) 
+                return true;
+            return false;
+        }
+
+        template<class E1, class E2, typename T>
+        static BOOST_UBLAS_INLINE
+        result_type apply(const matrix_expression<E1> &e1,
+                          const matrix_expression<E2> &e2,
+                          T &C) {
+            // ...
+            
+            std::vector<std::vector<value_type> > A, B;
+            bool isLarge = check(e1, e2);
+
+            assign_values(e1, e2, A, B, C, isLarge);
+            if(isLarge){
+                size_type size = getSize(e1().size1(), e1().size2(), e2().size1(), e2().size2());
+                Strassen(size, A, B, C);
+            }
+            else{
+                Trivial(A, B, C);
+            }
+            A.clear(); B.clear();
+        } 
+
         // Dense case
         template<class I1, class I2>
         static BOOST_UBLAS_INLINE

@@ -23,8 +23,8 @@ int main () {
             C(i,j) = 1;
 
     //tmp = prod(A, X - matrix<int>(prod(B,C)));
-    //tmp = prod(matrix<int>(prod(B,C)), X);
-    tmp = prod(A,B);
+    tmp = prod(matrix<int>(prod(B,C)), X);
+    //tmp = prod(A,B);
 //    tmp = A + X;
     std::cout << A << std::endl << X << std::endl << tmp << std::endl;// << std::endl << tmp;
 }

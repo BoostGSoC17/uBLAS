@@ -4832,6 +4832,12 @@ namespace boost { namespace numeric { namespace ublas {
             return functor_type::apply (e1_, e2_, i, j);
         }
 
+        BOOST_UBLAS_INLINE
+        template<typename T>
+        void operator () (T &C) const {
+            functor_type::apply(e1_, e2_, C);
+        }
+
         // Closure comparison
         BOOST_UBLAS_INLINE
         bool same_closure (const matrix_matrix_binary &mmb) const {
