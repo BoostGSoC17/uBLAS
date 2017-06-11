@@ -614,30 +614,8 @@ namespace detail {
         size_type size2 (BOOST_UBLAS_SAME (m.size2 (), e ().size2 ()));
         size_type size1 (BOOST_UBLAS_SAME (m.size1 (), e ().size1 ()));
 
-        auto E1 = e().expression1();
-        auto E2 = e().expression2();
-        
-        size_type size = getSize(E1.size1(), E1.size2(), E2.size1(), E2.size2());
-        //std::cout << size << "\n";
-        
-        std::vector<std::vector<type> > A(size, std::vector<type>(size, 0));
-        std::vector<std::vector<type> > B(size, std::vector<type>(size, 0));
-        std::vector<std::vector<type> > C(size, std::vector<type>(size, 0));
-
-
-        for(size_type j=0; j<E1.size2(); j++) {
-            for(size_type i=0; i<E1.size1(); i++) {
-                A[i][j] = E1(i,j);
-            }
-        }
-
-        for(size_type j=0; j<E1.size2(); j++) {
-            for(size_type i=0; i<E1.size1(); i++) {
-                B[i][j] = E2(i,j);
-            }
-        }
-
-        Strassen(size, A, B, C);
+        std::vector<std::vector<type> > C;
+        e () (C);
 
         for (size_type j = 0; j < size2; ++ j) {
 #ifndef BOOST_UBLAS_USE_DUFF_DEVICE
@@ -648,7 +626,7 @@ namespace detail {
             DD (size1, 2, r, (functor_type::apply (m (i, j), e () (i, j)), ++ i));
 #endif
         }
-        A.clear(); B.clear(); C.clear();
+        C.clear();
     }
 
     // Dense (proxy) case

@@ -1278,25 +1278,18 @@ namespace boost { namespace numeric { namespace ublas {
             std::vector<T> AA(N,T(N)), BB(N,T(N));
 
             size_type mid = N>>1;
-            for(size_type i=0; i<N; i++){
-                for(size_type j=0;j<N;j++){
-                    if(i<mid && j<mid)
-                        A11[i][j] = A[i][j];
-                    else if(i<mid)
-                        A12[i][j-mid] = A[i][j];
-                    else if(i>=mid && j<mid)
-                        A21[i-mid][j] = A[i][j];
-                    else
-                        A22[i-mid][j-mid] = A[i][j];
+            for(size_type i=0; i<mid; i++){
+                for(size_type j=0;j<mid;j++){
+                    
+                    A11[i][j] = A[i][j];
+                    A12[i][j] = A[i][j+mid];
+                    A21[i][j] = A[i+mid][j];
+                    A22[i][j] = A[i+mid][j+mid];
 
-                    if(i<mid && j<mid)
-                        B11[i][j] = B[i][j];
-                    else if(i<mid)
-                        B12[i][j-mid] = B[i][j];
-                    else if(i>=mid && j<mid)
-                        B21[i-mid][j] = B[i][j];
-                    else
-                        B22[i-mid][j-mid] = B[i][j];
+                    B11[i][j] = B[i][j];
+                    B12[i][j] = B[i][j+mid];
+                    B21[i][j] = B[i+mid][j];
+                    B22[i][j] = B[i+mid][j+mid];
                 }
             }
 
@@ -1347,14 +1340,10 @@ namespace boost { namespace numeric { namespace ublas {
             //Set the result to C[][N]
             for(size_type i=0; i<N; i++) {
                for(size_type j=0; j<N; j++) {
-                  if(i<mid && j<mid)
                     C[i][j] = C11[i][j];
-                  else if(i<mid)
-                    C[i][j] = C12[i][j-mid];
-                  else if(i>=mid && j<mid)
-                    C[i][j] = C21[i-mid][j];
-                  else
-                    C[i][j] = C22[i-mid][j-mid];
+                    C[i][j+mid] = C12[i][j];
+                    C[i+mid][j] = C21[i][j];
+                    C[i+mid][j+mid] = C22[i][j];
                }
             }
 
