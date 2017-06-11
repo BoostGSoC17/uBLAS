@@ -8,11 +8,11 @@ using namespace std::chrono;
 
 
 template<typename T>
-void Matrix_Multiply(T &A, T &B, T &C){
-    for(uint i=0;i<2;i++){
-        for(uint j=0;j<2;j++){
+void Matrix_Multiply(uint N,T &A, T &B, T &C){
+    for(uint i=0;i<N;i++){
+        for(uint j=0;j<N;j++){
             C[i][j] = 0;
-            for(int k=0; k<2; k++){
+            for(uint k=0; k<N; k++){
                 C[i][j] = C[i][j] + A[i][k]*B[k][j];
             }
         }
@@ -40,8 +40,8 @@ void Matrix_Sub(int N, VVT &X, VVT &Y, VVT &Z){
 template<typename T>
 void Strassen(uint N, VVT &A, VVT &B, VVT &C){
 
-    if(N == 2) {
-        Matrix_Multiply(A, B, C);
+    if(N == 512) {
+        Matrix_Multiply(N, A, B, C);
         return;
     }
 
@@ -139,7 +139,16 @@ void Strassen(uint N, VVT &A, VVT &B, VVT &C){
     AA.clear(); BB.clear();
 }
 
-const uint N = 128;
+template<typename T>
+void multiply(uint N,VVT &A, VVT &B, VVT &C){
+    if(N<=512){
+        Matrix_Multiply(N,A,B,C);
+        return;
+    }
+    Strassen(N,A,B,C);
+}
+
+const uint N = 2048;
 
 int main(){
 
@@ -148,7 +157,7 @@ int main(){
     std::vector<std::vector<int> > C(N,std::vector<int>(N,1));
 
     high_resolution_clock::time_point t1 = high_resolution_clock::now();
-    Strassen(N,A,B,C);
+    multiply(N,A,B,C);
     high_resolution_clock::time_point t2 = high_resolution_clock::now();
 
     duration<double> time_span = duration_cast<duration<double>>(t2 - t1);

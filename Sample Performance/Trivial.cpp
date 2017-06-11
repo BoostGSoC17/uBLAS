@@ -5,7 +5,7 @@
 #define VVT std::vector<VT>
 using namespace std::chrono;
 
-const uint N = 128;
+const uint N = 2048;
 
 template<typename T>
 void Multiply(uint N, VVT &A, VVT &B, VVT &C){
