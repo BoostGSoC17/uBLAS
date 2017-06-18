@@ -576,6 +576,14 @@ namespace detail {
             ++ it2, ++ it2e;
         }
     }
+
+    /*template<typename T, typename size_type>
+    Delete(T **C, size_type row) {
+        for(size_type i=0; i<row; i++) {
+            delete [] C[i];
+        }
+        delete [] C;
+    }*/
  
     // Explicitly indexing row major
     template<template <class T1, class T2> class F, class M, class E>
@@ -588,7 +596,13 @@ namespace detail {
         size_type size1 (BOOST_UBLAS_SAME (m.size1 (), e ().size1 ()));
         size_type size2 (BOOST_UBLAS_SAME (m.size2 (), e ().size2 ()));
         
-        std::vector<std::vector<type> > C;
+        size_type row = e().size1();
+        size_type col = e().size2();
+        type **C;
+        C = new type*[row];
+        for(int i=0; i<row; i++) {
+            C[i] = new int[col];
+        }
         e () (C);
 
         for (size_type i = 0; i < size1; ++ i) {
@@ -600,7 +614,11 @@ namespace detail {
             DD (size2, 2, r, (functor_type::apply (m (i, j), e () (i, j)), ++ j));
 #endif
         }
-        C.clear();
+        
+        for(int i=0; i<row; i++) {
+            delete [] C[i];
+        }
+        delete [] C;
     }
 
 
@@ -614,7 +632,7 @@ namespace detail {
         size_type size2 (BOOST_UBLAS_SAME (m.size2 (), e ().size2 ()));
         size_type size1 (BOOST_UBLAS_SAME (m.size1 (), e ().size1 ()));
 
-        std::vector<std::vector<type> > C;
+        type **C;
         e () (C);
 
         for (size_type j = 0; j < size2; ++ j) {
@@ -626,7 +644,8 @@ namespace detail {
             DD (size1, 2, r, (functor_type::apply (m (i, j), e () (i, j)), ++ i));
 #endif
         }
-        C.clear();
+        //C.clear();
+        Delete(C, e().size1());
     }
 
     // Dense (proxy) case

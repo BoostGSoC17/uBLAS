@@ -4834,7 +4834,7 @@ namespace boost { namespace numeric { namespace ublas {
 
         BOOST_UBLAS_INLINE
         template<typename T>
-        void operator () (T &C) const {
+        void operator () (T **C) const {
             functor_type::apply(e1_, e2_, C);
         }
 
