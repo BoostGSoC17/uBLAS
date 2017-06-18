@@ -6,6 +6,7 @@
 #define VVT std::vector<VT>
 using namespace std::chrono;
 
+int var = 0;
 
 template<typename T>
 void Matrix_Multiply(uint N,T &A, T &B, T &C){
@@ -44,6 +45,8 @@ void Strassen(uint N, VVT &A, VVT &B, VVT &C){
         Matrix_Multiply(N, A, B, C);
         return;
     }
+    var += 1;
+    high_resolution_clock::time_point t1 = high_resolution_clock::now();
 
     VVT A11(N,VT(N)), A12(N,VT(N)), A21(N,VT(N)), A22(N,VT(N));
     VVT B11(N,VT(N)), B12(N,VT(N)), B21(N,VT(N)), B22(N,VT(N));
@@ -137,18 +140,26 @@ void Strassen(uint N, VVT &A, VVT &B, VVT &C){
     C11.clear(); C12.clear(); C21.clear(); C22.clear();
     P1.clear(); P2.clear(); P3.clear(); P4.clear(); P5.clear(); P6.clear(); P7.clear();
     AA.clear(); BB.clear();
+
+    high_resolution_clock::time_point t2 = high_resolution_clock::now();
+
+    duration<double> time_span = duration_cast<duration<double>>(t2 - t1);
+    std::cout << std::fixed;
+    std::cout << std::setprecision(7) << time_span.count() << " " << var << "\n";
+
+    var -= 1;
 }
 
 template<typename T>
 void multiply(uint N,VVT &A, VVT &B, VVT &C){
-    if(N<=512){
+    if(N<512){
         Matrix_Multiply(N,A,B,C);
         return;
     }
     Strassen(N,A,B,C);
 }
 
-const uint N = 2048;
+const uint N = 1024;
 
 int main(){
 
