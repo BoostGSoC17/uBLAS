@@ -1265,24 +1265,6 @@ namespace boost { namespace numeric { namespace ublas {
             }
         }
 
-        /*template<typename T, typename size_type>
-        static BOOST_UBLAS_INLINE
-        void Allocate(T **A, size_type row, size_type col) {
-            A = new T*[row];
-            for(size_type i=0; i<row; i++) {
-                A[i] = new T[col];
-            }
-        }
-
-        template<typename T>
-        static BOOST_UBLAS_INLINE
-        void Delete(T **A, size_type row) {
-            for(size_type i=0; i<row; i++) {
-                delete [] A[i];
-            }
-            delete [] A;
-        }*/
-
         template<typename T>
         static BOOST_UBLAS_INLINE 
         void Strassen(size_type N, T **A, T **B, T **C) {
@@ -1290,8 +1272,7 @@ namespace boost { namespace numeric { namespace ublas {
                 Trivial(A, B, C, N, N, N);
                 return;
             } 
-            std::cout << "Entered\n";
-
+            
             T **A11 = new T*[N]; T **A12 = new T*[N]; T **A21 = new T*[N]; T **A22 = new T*[N];
             T **B11 = new T*[N]; T **B12 = new T*[N]; T **B21 = new T*[N]; T **B22 = new T*[N];
             T **C11 = new T*[N]; T **C12 = new T*[N]; T **C21 = new T*[N]; T **C22 = new T*[N];
@@ -1305,14 +1286,6 @@ namespace boost { namespace numeric { namespace ublas {
                 P1[i] = new T[N]; P2[i] = new T[N]; P3[i] = new T[N]; P4[i] = new T[N]; P5[i] = new T[N]; P6[i] = new T[N]; P7[i] = new T[N];
                 AA[i] = new T[N]; BB[i] = new T[N];
             }
-
-            std::cout << "done\n";
-            
-            /*Allocate(A11, N, N); Allocate(A12, N, N); Allocate(A21, N, N); Allocate(A22, N, N);
-            Allocate(B11, N, N); Allocate(B12, N, N); Allocate(B21, N, N); Allocate(B22, N, N);
-            Allocate(C11, N, N); Allocate(C12, N, N); Allocate(C21, N, N); Allocate(C22, N, N);
-            Allocate(P1, N, N); Allocate(P2, N, N); Allocate(P3, N, N); Allocate(P4, N, N); Allocate(P5, N, N); Allocate(P6, N, N); Allocate(P7, N, N);
-            Allocate(AA, N, N); Allocate(BB, N, N);*/
 
             size_type mid = N>>1;
             for(uint i=0; i<N; i++){
@@ -1337,11 +1310,7 @@ namespace boost { namespace numeric { namespace ublas {
                 }
             }
 
-            std::cout << "A11 value = " << A22[0][0] << "\n";
-            AA[0][0] = A11[0][0];
-            std::cout << "entered here\n";
             Matrix_Add(N>>1, A11, A22, AA);
-            std::cout << "Left here\n";
             Matrix_Add(N>>1, B11, B22, BB);
             Strassen(N>>1, AA, BB, P1);
 
@@ -1399,16 +1368,6 @@ namespace boost { namespace numeric { namespace ublas {
                 }
             }
 
-            /*A11.clear(); A12.clear(); A21.clear(); A22.clear();
-            B11.clear(); B12.clear(); B21.clear(); B22.clear();
-            C11.clear(); C12.clear(); C21.clear(); C22.clear();
-            P1.clear(); P2.clear(); P3.clear(); P4.clear(); P5.clear(); P6.clear(); P7.clear();
-            AA.clear(); BB.clear();*/
-            /*Delete(A11, N); Delete(A12, N); Delete(A21, N); Delete(A22, N);
-            Delete(B11, N); Delete(B12, N); Delete(B21, N); Delete(B22, N);
-            Delete(C11, N); Delete(C12, N); Delete(C21, N); Delete(C22, N);
-            Delete(P1, N); Delete(P2, N); Delete(P3, N); Delete(P4, N); Delete(P5, N); Delete(P6, N); Delete(P7, N);
-            Delete(AA, N); Delete(BB, N); */
             for(size_type i=0; i<N; i++) {
                 delete [] A11[i]; delete [] A12[i]; delete [] A21[i]; delete [] A22[i];
                 delete [] B11[i]; delete [] B12[i]; delete [] B21[i]; delete [] B22[i];
@@ -1442,18 +1401,12 @@ namespace boost { namespace numeric { namespace ublas {
                            T **C, 
                            bool isLarge) {
             
-            //A[0][0] = 1;
-            //std::cout << "Hello\n";
             for(int i=0; i<e1().size1(); i++) {
-                //std::cout << "I = " << i << " : ";
                 for(int j=0; j<e1().size2(); j++) {
-                    //std::cout << "J = " << j << "\t";
                     A[i][j] = e1 () (i,j);
                 }
-               // std::cout << "\n";
             }
-            //std::cout << "done\n";
-
+            
             for(size_type i=0; i<e2().size1(); i++) {
                 for(size_type j=0; j<e2().size2(); j++) {
                     B[i][j] = e2 () (i,j);
@@ -1478,8 +1431,6 @@ namespace boost { namespace numeric { namespace ublas {
                           const matrix_expression<E2> &e2,
                           T **C) {
             // ...
-            // Change Parameter to value_type **C;
-            //std::vector<std::vector<value_type> > A, B;
             value_type **A, **B;
             bool isLarge = check(e1, e2);
             
@@ -1511,9 +1462,7 @@ namespace boost { namespace numeric { namespace ublas {
             else{
                 Trivial(A, B, C, e1().size1(), e2().size2(), e1().size2()); 
             } 
-            //A.clear(); B.clear();
-            //Delete(A, e1().size1());
-            //Delete(B, e2().size1());
+            
             if(isLarge) {
                 size_type size = getSize(e1().size1(), e1().size2(), e2().size1(), e2().size2());
                 for(size_type i=0; i<size; i++) {
