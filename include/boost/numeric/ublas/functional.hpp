@@ -1234,7 +1234,6 @@ namespace boost { namespace numeric { namespace ublas {
         static BOOST_UBLAS_INLINE
         void Trivial(T **A, T **B, T **C, size_type I, size_type J, size_type K) {
             //int I = A.size(), K = A[0].size(), J = B[0].size();
-            std::cout << "Entered Trivial\n";
             for(size_type i=0; i<I; i++) {
                 for(size_type j=0; j<J; j++) {
                     C[i][j] = 0;

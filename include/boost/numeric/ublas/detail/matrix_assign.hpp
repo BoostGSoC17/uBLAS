@@ -576,6 +576,19 @@ namespace detail {
             ++ it2, ++ it2e;
         }
     }
+
+    template<typename E>
+    static BOOST_UBLAS_INLINE
+    auto getSize(const matrix_expression<E> &e) {
+        auto E1 = e().expression1();
+        auto E2 = e().expression2();
+
+        auto Max = std::max(E1.size1(), std::max(E1.size2(), std::max(E2.size1(), E2.size2())));
+        auto Size = 1;
+        while(Size < Max)
+            Size <<= 1;
+        return Size;
+    }
  
     // Explicitly indexing row major
     template<template <class T1, class T2> class F, class M, class E>
@@ -590,12 +603,12 @@ namespace detail {
         
         size_type row = e().size1();
         size_type col = e().size2();
-
-        // To resize to 2**K for general case, later
+        size_type Size = getSize(e);
+        
         type **C;
-        C = new type*[row];
-        for(int i=0; i<row; i++) {
-            C[i] = new int[col];
+        C = new type*[Size];
+        for(int i=0; i<Size; i++) {
+            C[i] = new int[Size];
         }
         e () (C);
 
@@ -609,7 +622,7 @@ namespace detail {
 #endif
         }
         
-        for(int i=0; i<row; i++) {
+        for(int i=0; i<Size; i++) {
             delete [] C[i];
         }
         delete [] C;
@@ -628,10 +641,11 @@ namespace detail {
 
         size_type row = e().size1();
         size_type col = e().size2();
+        size_type Size = getSize(e);
         type **C;
-        C = new type*[row];
-        for(int i=0; i<row; i++) {
-            C[i] = new int[col];
+        C = new type*[Size];
+        for(int i=0; i<Size; i++) {
+            C[i] = new int[Size];
         }
         e () (C);
 
@@ -644,7 +658,7 @@ namespace detail {
             DD (size1, 2, r, (functor_type::apply (m (i, j), e () (i, j)), ++ i));
 #endif
         }
-        for(int i=0; i<row; i++) {
+        for(int i=0; i<Size; i++) {
             delete [] C[i];
         }
         delete [] C;
