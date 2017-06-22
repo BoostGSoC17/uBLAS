@@ -11,7 +11,7 @@ int main () {
 	//freopen("Benchmark.txt", "w", stdout);
     int N = 100;
 	while(N<=2000) {
-		A.resize(N,N+50); B.resize(N+50,N), ans.resize(N,N);
+		A.resize(N,N); B.resize(N,N), ans.resize(N,N);
 		for(int i=0;i<A.size1();i++) {
 			for(int j=0;j<A.size2();j++) {
 				A(i,j) = 1; B(i,j) = 1;			
@@ -27,7 +27,7 @@ int main () {
     	std::cout << std::setprecision(7) << time_span.count() << "\n";	
 		N += 100;
 	}
-	
+
 	
     return 0;
 }
