@@ -608,7 +608,7 @@ namespace detail {
         type **C;
         C = new type*[Size];
         for(int i=0; i<Size; i++) {
-            C[i] = new int[Size];
+            C[i] = new int[Size]();
         }
         e () (C);
 

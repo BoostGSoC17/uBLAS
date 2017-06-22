@@ -1437,19 +1437,19 @@ namespace boost { namespace numeric { namespace ublas {
                 size_type size = getSize(e1().size1(), e1().size2(), e2().size1(), e2().size2());
                 A = new value_type*[size]; B = new value_type*[size];
                 for(size_type i=0;i<size; i++) {
-                    A[i] = new value_type[size];
-                    B[i] = new value_type[size]; 
+                    A[i] = new value_type[size]();
+                    B[i] = new value_type[size](); 
                 }
             }
             else {
                 size_type rowA = e1().size1(), rowB = e2().size1();
-                size_type colA = e2().size2(), colB = e2().size2();
+                size_type colA = e1().size2(), colB = e2().size2();
                 A = new value_type*[rowA];    B = new value_type*[rowB];
                 for(int i=0; i<rowA; i++) {
-                    A[i] = new value_type[colA];
+                    A[i] = new value_type[colA]();
                 }
                 for(int i=0; i<rowB; i++) {
-                    B[i] = new value_type[colB];
+                    B[i] = new value_type[colB]();
                 }
             }
 
@@ -1465,10 +1465,10 @@ namespace boost { namespace numeric { namespace ublas {
             if(isLarge) {
                 size_type size = getSize(e1().size1(), e1().size2(), e2().size1(), e2().size2());
                 for(size_type i=0; i<size; i++) {
-                    delete [] A[i];
-                    delete [] B[i];
+                    delete[] A[i];
+                    delete[] B[i];
                 }
-                delete [] A; delete [] B;
+                delete[] A; delete[] B;
             }
             else {
                 size_type rowA = e1().size1(), rowB = e2().size1();
