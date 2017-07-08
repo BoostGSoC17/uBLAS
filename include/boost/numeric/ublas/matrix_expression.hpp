@@ -2843,6 +2843,23 @@ namespace boost { namespace numeric { namespace ublas {
         expression2_closure_type e2_;
     };
 
+    struct valueOp {};
+    struct multOp {};
+
+    template<typename E1, typename E2, typename op = valueOp>
+    struct binop {
+        const E1 &left;
+        const E2 &right;
+
+        binop(const E1 &left, const E2 &right, op opval) : left(left), right(right) {}
+        binop(const E1 &val) : left(val), right(val) {}
+    };
+
+    template<typename E1, typename E2>
+    binop<E1, E2, multOp> operator * (const E1 &left, const E2 &right) {
+        return binop<E1, E2, multOp> (left, right, multOp());
+    }
+
     template<class E1, class E2, class F>
     struct matrix_binary_traits {
         typedef matrix_binary<E1, E2, F> expression_type;
