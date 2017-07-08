@@ -62,27 +62,9 @@ int main(){
     }
 
     chainMult();
-
-    for(int i=0;i<=N;i++){
-        for(int j=0; j<=N; j++){
-            cout << "DP["<<i<<"]["<<j<<"] = "<<DP[i][j]<<" ";
-        }
-        cout << "\n";
-    }
-    cout << "\n";
-
-    for(int i=0;i<=N;i++){  
-        for(int j=0; j<=N; j++){
-            cout << "splits["<<i<<"]["<<j<<"] = "<<splits[i][j]<<" ";
-        }
-        cout << "\n";
-    }
-    cout << "\n";
-
     DP.clear();
     
     PrintChain(1, 6);
-
     cout << "\n";
 
     return 0;
