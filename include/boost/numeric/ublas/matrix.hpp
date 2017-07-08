@@ -335,6 +335,10 @@ namespace boost { namespace numeric {
         template<typename D, typename E>
         void preProcess(D &dimensions, E &DP, E &splits) {
             long int N = dimensions.size();
+
+            for(auto i=2; i<N;i++) {
+                BOOST_UBLAS_SAME(dimensions[i-1].second, dimensions[i].first);
+            }
             
             DP.resize(N, std::vector<long int>(N, 0));
             splits.resize(N, std::vector<long int>(N, 0));
@@ -383,7 +387,7 @@ namespace boost { namespace numeric {
         template<typename E1, typename E2>
         void Memoization(const binop<E1, E2, multOp> &o, std::vector<Memoize> &M) {
             Memoization(o.left, M);
-            Memoization(o.right, M);  
+            Memoization(o.right, M);   
         }
 
         template<typename M, typename V>
@@ -409,7 +413,7 @@ namespace boost { namespace numeric {
             Memoization(o, matrices); 
 
             matrix<T> res = Chaining(matrices, splits, 1, matrices.size());
-            Dimension.clear(); DP.clear(); splits.clear();
+            Dimensions.clear(); DP.clear(); splits.clear();
 
             return assign_temporary (res); 
         } 
