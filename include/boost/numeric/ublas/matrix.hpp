@@ -2421,6 +2421,7 @@ namespace boost { namespace numeric {
             matrix_type::operator = (ae);
             return *this;
         }
+
     };
 
 

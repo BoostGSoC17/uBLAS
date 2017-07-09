@@ -310,13 +310,13 @@ namespace boost { namespace numeric { namespace ublas {
     public:
         typedef typename E1::const_closure_type expression1_closure_type;
         typedef typename E2::const_closure_type expression2_closure_type;
+        typedef F functor_type;
     private:
         typedef vector_matrix_binary<E1, E2, F> self_type;
     public:
 #ifdef BOOST_UBLAS_ENABLE_PROXY_SHORTCUTS
         using matrix_expression<self_type>::operator ();
 #endif
-        typedef F functor_type;
         typedef typename promote_traits<typename E1::size_type, typename E2::size_type>::promote_type size_type;
         typedef typename promote_traits<typename E1::difference_type, typename E2::difference_type>::promote_type difference_type;
         typedef typename F::result_type value_type;
@@ -904,9 +904,9 @@ namespace boost { namespace numeric { namespace ublas {
         public matrix_expression<matrix_unary1<E, F> > {
 
         typedef E expression_type;
-        typedef F functor_type;
     public:
         typedef typename E::const_closure_type expression_closure_type;
+        typedef F functor_type;
     private:
         typedef matrix_unary1<E, F> self_type;
     public:
@@ -1437,11 +1437,11 @@ namespace boost { namespace numeric { namespace ublas {
         typedef typename boost::mpl::if_<boost::is_same<F, scalar_identity<typename E::value_type> >,
                                           E,
                                           const E>::type expression_type;
-        typedef F functor_type;
     public:
         typedef typename boost::mpl::if_<boost::is_const<expression_type>,
                                           typename E::const_closure_type,
                                           typename E::closure_type>::type expression_closure_type;
+        typedef F functor_type;
     private:
         typedef matrix_unary2<E, F> self_type;
     public:
@@ -1976,10 +1976,10 @@ namespace boost { namespace numeric { namespace ublas {
 
         typedef E1 expression1_type;
         typedef E2 expression2_type;
-        typedef F functor_type;
     public:
         typedef typename E1::const_closure_type expression1_closure_type;
         typedef typename E2::const_closure_type expression2_closure_type;
+        typedef F functor_type;
     private:
         typedef matrix_binary<E1, E2, F> self_type;
     public:
@@ -2924,7 +2924,6 @@ namespace boost { namespace numeric { namespace ublas {
 
         typedef E1 expression1_type;
         typedef E2 expression2_type;
-        typedef F functor_type;
         typedef const E1& expression1_closure_type;
         typedef typename E2::const_closure_type expression2_closure_type;
         typedef matrix_binary_scalar1<E1, E2, F> self_type;
@@ -2932,6 +2931,7 @@ namespace boost { namespace numeric { namespace ublas {
 #ifdef BOOST_UBLAS_ENABLE_PROXY_SHORTCUTS
         using matrix_expression<self_type>::operator ();
 #endif
+        typedef F functor_type;
         typedef typename E2::size_type size_type;
         typedef typename E2::difference_type difference_type;
         typedef typename F::result_type value_type;
@@ -3444,10 +3444,10 @@ namespace boost { namespace numeric { namespace ublas {
 
         typedef E1 expression1_type;
         typedef E2 expression2_type;
-        typedef F functor_type;
     public:
         typedef typename E1::const_closure_type expression1_closure_type;
         typedef const E2& expression2_closure_type;
+        typedef F functor_type;
     private:
         typedef matrix_binary_scalar2<E1, E2, F> self_type;
     public:
@@ -3980,11 +3980,9 @@ namespace boost { namespace numeric { namespace ublas {
     public:
         typedef E1 expression1_type;
         typedef E2 expression2_type;
-    private:
-        typedef F functor_type;
-    public:
         typedef typename E1::const_closure_type expression1_closure_type;
         typedef typename E2::const_closure_type expression2_closure_type;
+        typedef F functor_type;
     private:
         typedef matrix_vector_binary1<E1, E2, F> self_type;
     public:
@@ -4387,10 +4385,10 @@ namespace boost { namespace numeric { namespace ublas {
 
         typedef E1 expression1_type;
         typedef E2 expression2_type;
-        typedef F functor_type;
     public:
         typedef typename E1::const_closure_type expression1_closure_type;
         typedef typename E2::const_closure_type expression2_closure_type;
+        typedef F functor_type;
     private:
         typedef matrix_vector_binary2<E1, E2, F> self_type;
     public:
@@ -4794,11 +4792,9 @@ namespace boost { namespace numeric { namespace ublas {
     public:
         typedef E1 expression1_type;
         typedef E2 expression2_type;
-    private:
-        typedef F functor_type;
-    public:
         typedef typename E1::const_closure_type expression1_closure_type;
         typedef typename E2::const_closure_type expression2_closure_type;
+        typedef F functor_type;
     private:
         typedef matrix_matrix_binary<E1, E2, F> self_type;
     public:

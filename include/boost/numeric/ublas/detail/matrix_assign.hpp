@@ -591,9 +591,10 @@ namespace detail {
     }
  
     // Explicitly indexing row major
-    template<template <class T1, class T2> class F, class M, class E>
+    template<template <class T1, class T2> class F, class M, class E,
+                                        class M1, class M2, class TV>
     // BOOST_UBLAS_INLINE This function seems to be big. So we do not let the compiler inline it.
-    void indexing_matrix_assign (M &m, const matrix_expression<E> &e, row_major_tag) {
+    void indexing_matrix_assign (M &m, const matrix_expression<E> &e, row_major_tag, matrix_matrix_prod<M1, M2, TV>) {
         typedef F<typename M::reference, typename E::value_type> functor_type;
         typedef typename M::size_type size_type;
         typedef typename M::value_type type;
@@ -628,11 +629,31 @@ namespace detail {
         delete [] C;
     }
 
+    template<template <class T1, class T2> class F, class M, class E, class FT>
+    // BOOST_UBLAS_INLINE This function seems to be big. So we do not let the compiler inline it.
+    void indexing_matrix_assign (M &m, const matrix_expression<E> &e, row_major_tag, FT operation_type) {
+        typedef F<typename M::reference, typename E::value_type> functor_type;
+        typedef typename M::size_type size_type;
+        size_type size1 (BOOST_UBLAS_SAME (m.size1 (), e ().size1 ()));
+        size_type size2 (BOOST_UBLAS_SAME (m.size2 (), e ().size2 ()));
+
+        for (size_type i = 0; i < size1; ++ i) {
+#ifndef BOOST_UBLAS_USE_DUFF_DEVICE
+            for (size_type j = 0; j < size2; ++ j)
+                functor_type::apply (m (i, j), e () (i, j));
+#else
+            size_type j (0);
+            DD (size2, 2, r, (functor_type::apply (m (i, j), e () (i, j)), ++ j));
+#endif
+        }
+    }
+
 
     // Explicitly indexing column major
-    template<template <class T1, class T2> class F, class M, class E>
+    template<template <class T1, class T2> class F, class M, class E,
+                                        class M1, class M2, class TV>
     // BOOST_UBLAS_INLINE This function seems to be big. So we do not let the compiler inline it.
-    void indexing_matrix_assign (M &m, const matrix_expression<E> &e, column_major_tag) {
+    void indexing_matrix_assign (M &m, const matrix_expression<E> &e, column_major_tag, matrix_matrix_prod<M1, M2, TV>) {
         typedef F<typename M::reference, typename E::value_type> functor_type;
         typedef typename M::size_type size_type;
         typedef typename M::value_type type;
@@ -664,6 +685,33 @@ namespace detail {
         delete [] C;
     }
 
+    template<template <class T1, class T2> class F, class M, class E, class FT>
+    // BOOST_UBLAS_INLINE This function seems to be big. So we do not let the compiler inline it.
+    void indexing_matrix_assign (M &m, const matrix_expression<E> &e, column_major_tag, FT operation_type) {
+        typedef F<typename M::reference, typename E::value_type> functor_type;
+        typedef typename M::size_type size_type;
+        size_type size1 (BOOST_UBLAS_SAME (m.size1 (), e ().size1 ()));
+        size_type size2 (BOOST_UBLAS_SAME (m.size2 (), e ().size2 ()));
+
+        for (size_type i = 0; i < size1; ++ i) {
+#ifndef BOOST_UBLAS_USE_DUFF_DEVICE
+            for (size_type j = 0; j < size2; ++ j)
+                functor_type::apply (m (i, j), e () (i, j));
+#else
+            size_type j (0);
+            DD (size2, 2, r, (functor_type::apply (m (i, j), e () (i, j)), ++ j));
+#endif
+        }
+    }
+
+
+    template<template <class T1, class T2> class F, class M, class C, class E>
+    void indexing_matrix_assign_controller (M &m, const matrix_expression<E> &e, C) {
+        typedef C orientation_category;
+        typedef typename E::functor_type functor_type;
+        indexing_matrix_assign<F>(m, e, orientation_category(), functor_type()); 
+    }    
+
     // Dense (proxy) case
     template<template <class T1, class T2> class F, class R, class M, class E, class C>
     // BOOST_UBLAS_INLINE This function seems to be big. So we do not let the compiler inline it.
@@ -671,7 +719,7 @@ namespace detail {
         // R unnecessary, make_conformant not required
         typedef C orientation_category;
 #ifdef BOOST_UBLAS_USE_INDEXING
-        indexing_matrix_assign<F> (m, e, orientation_category ());
+        indexing_matrix_assign_controller<F> (m, e, orientation_category());
 #elif BOOST_UBLAS_USE_ITERATING
         iterating_matrix_assign<F> (m, e, orientation_category ());
 #else
@@ -682,7 +730,7 @@ namespace detail {
             size2 >= BOOST_UBLAS_ITERATOR_THRESHOLD)
             iterating_matrix_assign<F> (m, e, orientation_category ());
         else
-            indexing_matrix_assign<F> (m, e, orientation_category ());
+            indexing_matrix_assign_controller<F> (m, e, C);
 #endif
     }
     // Packed (proxy) row major case
