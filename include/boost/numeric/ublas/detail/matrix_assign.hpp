@@ -704,7 +704,7 @@ namespace detail {
         }
     }
 
-
+    // Segrigating matrix product & other operations based on functor type
     template<template <class T1, class T2> class F, class M, class C, class E>
     void indexing_matrix_assign_controller (M &m, const matrix_expression<E> &e, C) {
         typedef C orientation_category;
