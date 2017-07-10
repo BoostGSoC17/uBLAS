@@ -1485,6 +1485,16 @@ namespace detail {
         matrix_assign<F, conformant_restrict_type> (m, e, storage_category (), orientation_category ());
     }
 
+    template<class E1, class E2>
+    BOOST_UBLAS_INLINE
+    void matrix_data_assign (E1 &m, E2 &temporary) {
+        for(auto i = 0; i < m.size1(); i++) {
+            for(auto j = 0; j<m.size2(); j++) {
+                m(i, j) = temporary(i, j);
+            }
+        } 
+    }
+
     template<class SC, class RI1, class RI2>
     struct matrix_swap_traits {
         typedef SC storage_category;

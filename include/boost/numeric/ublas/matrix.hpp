@@ -402,6 +402,7 @@ namespace boost { namespace numeric {
         }
 
         template<class E1, class E2>
+        BOOST_UBLAS_INLINE  
         matrix &operator = (const binop<E1, E2, multOp> &o) {
             std::vector<std::pair<long int, long int> > Dimensions; Dimensions.push_back(std::make_pair(0, 0));
             getDimensions(o, Dimensions);
@@ -2474,7 +2475,7 @@ namespace boost { namespace numeric {
             Mem.push_back(temp);
         }
             
-        template<typename E1, typename E2>
+        template<typename E1, typename E2>  
         void Memoization(const binop<E1, E2, multOp> &o, std::vector<Memoize> &Mem) {
             Memoization(o.left, Mem);
             Memoization(o.right, Mem);   
@@ -2503,6 +2504,7 @@ namespace boost { namespace numeric {
         }
 
         template<class E1, class E2>
+        BOOST_UBLAS_INLINE
         bounded_matrix &operator = (const binop<E1, E2, multOp> &o) {
             std::vector<std::pair<long int, long int> > Dimensions; Dimensions.push_back(std::make_pair(0, 0));
             getDimensions(o, Dimensions);
@@ -2514,7 +2516,6 @@ namespace boost { namespace numeric {
             Memoization(o, matrices); 
 
             matrix<T> temp = Chaining(matrices, splits, 1, matrices.size());
-            std::cout << M << "\n" << N << "\n";
             Dimensions.clear(); DP.clear(); splits.clear();
             
             bounded_matrix<T, M, N> res;
@@ -5207,6 +5208,14 @@ namespace boost { namespace numeric {
             matrix_assign<scalar_assign> (*this, ae);
         }
 
+        BOOST_UBLAS_INLINE
+        c_matrix (const matrix<T> &m):
+            size1_ (m.size1()), size2_ (m.size2()) {
+            if(size1_ > N || size2_ > M)
+                bad_size().raise();
+            matrix_data_assign(*this, m);
+        }
+
         // Accessors
         BOOST_UBLAS_INLINE
         size_type size1 () const {
@@ -5279,6 +5288,90 @@ namespace boost { namespace numeric {
                 std::fill (data_ [i], data_ [i] + size2_, value_type/*zero*/());
         }
 
+        // Matrix Chaining
+        template<typename E1, typename E2>
+        void preProcess(E1 &dimensions, E2 &DP, E2 &splits) {
+            long int Num = dimensions.size();
+
+            for(auto i=2; i<Num;i++) {
+                BOOST_UBLAS_SAME(dimensions[i-1].second, dimensions[i].first);
+            }
+            
+            DP.resize(Num, std::vector<long int>(Num, 0));
+            splits.resize(Num, std::vector<long int>(Num, 0));
+            for(auto i=Num-1; i>=1; i--) { 
+                for(auto j=i; j<=Num-1; j++) {
+                    DP[i][j] = 1e9;
+                    for(auto k=i; k<j; k++) {
+                        long int temp = DP[i][k] + DP[k+1][j] + dimensions[i].first * dimensions[k].second * dimensions[j].second;
+                        if(DP[i][j] > temp) {
+                            DP[i][j] = temp; splits[i][j] = k;
+                        }
+                    }
+                    if(i==j)
+                        DP[i][j] = 0;    
+                }
+            }
+        }
+ 
+        template<typename E, typename V>
+        void getDimensions(const E &o, V &v) {
+            v.push_back(std::make_pair(o.size1(), o.size2()));
+        }
+
+        template<typename E1, typename E2, typename V>
+        void getDimensions(const binop<E1, E2, multOp> &o, V &v) {
+            getDimensions(o.left, v);
+            getDimensions(o.right, v);
+        }
+
+        struct Memoize {
+            matrix<T> mat;
+        };
+
+        template<typename E>
+        void Memoization(const E &o, std::vector<Memoize> &m) {
+            Memoize temp;
+            temp.mat.resize(o.size1(), o.size2());
+            for(unsigned i=0; i<o.size1(); i++) {
+                for(unsigned j=0; j<o.size2(); j++) {
+                    temp.mat(i,j) = o(i,j);
+                }
+            }
+            m.push_back(temp);
+        }
+            
+        template<typename E1, typename E2>
+        void memoization(const binop<E1, E2, multOp> &o, std::vector<Memoize> &m) {
+            Memoization(o.left, m);
+            Memoization(o.right, m);   
+        }
+
+        template<typename E1, typename E2>
+        matrix<T> chaining(E1 &memo, E2 &splits, long int i, long int j) {
+            if(i == j) {
+                return memo[i-1].mat;
+            }
+            matrix<T> matrixA = chaining(memo, splits, i, splits[i][j]);
+            matrix<T> matrixB = chaining(memo, splits, splits[i][j]+1, j);
+            matrix<T> res = prod(matrixA, matrixB);
+            return res;
+        }
+
+        template<class E1, class E2>
+        matrix<T> matrix_chain_controller(const binop<E1, E2, multOp> &o) {
+            std::vector<std::pair<long int, long int> > Dimensions; Dimensions.push_back(std::make_pair(0, 0));
+            getDimensions(o, Dimensions);
+
+            std::vector<std::vector<long int> > DP, splits;
+            preProcess(Dimensions, DP, splits);
+
+            std::vector<Memoize> matrices;
+            memoization(o, matrices); 
+            return chaining(matrices, splits, 1, matrices.size());
+        }
+
+
         // Assignment
 #ifdef BOOST_UBLAS_MOVE_SEMANTICS
 
@@ -5316,6 +5409,15 @@ namespace boost { namespace numeric {
             self_type temporary (ae);
             return assign_temporary (temporary);
         }
+
+        template<class E1, class E2>
+        c_matrix &operator = (const binop<E1, E2, multOp> &o) {
+            matrix<T> resultant = matrix_chain_controller(o);
+            c_matrix temporary(resultant);
+            return assign_temporary (temporary);
+        }
+
+
         template<class AE>
         BOOST_UBLAS_INLINE
         c_matrix &assign (const matrix_expression<AE> &ae) { 
