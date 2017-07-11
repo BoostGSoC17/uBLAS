@@ -2583,6 +2583,20 @@ namespace boost { namespace numeric {
             matrix_type::operator = (matrix_chain_controller(o));
             return *this;
         }
+
+        template<class E1, class E2>
+        BOOST_UBLAS_INLINE
+        bounded_matrix &operator += (const binop<E1, E2, multOp> &o) {
+            matrix_type::operator = (*this + matrix_chain_controller(o));
+            return *this;
+        }
+
+        template<class E1, class E2>
+        BOOST_UBLAS_INLINE
+        bounded_matrix &operator -= (const binop<E1, E2, multOp> &o) {
+            matrix_type::operator = (*this - matrix_chain_controller(o));
+            return *this;
+        }
     };
 
 
