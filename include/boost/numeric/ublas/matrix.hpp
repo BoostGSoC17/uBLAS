@@ -2437,6 +2437,10 @@ namespace boost { namespace numeric {
         BOOST_UBLAS_INLINE
         bounded_matrix (const matrix_expression<AE> &ae):
             matrix_type (ae) {}
+        template<class E1, class E2>
+        BOOST_UBLAS_INLINE
+        bounded_matrix (const binop<E1, E2, multOp> &o):
+            matrix_type (matrix_chain_controller(o)) {}
         BOOST_UBLAS_INLINE
         ~bounded_matrix () {}
 
