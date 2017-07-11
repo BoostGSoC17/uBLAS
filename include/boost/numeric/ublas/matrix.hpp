@@ -434,12 +434,29 @@ namespace boost { namespace numeric {
             matrix_assign<scalar_assign> (*this, ae);
             return *this;
         }
+
+        template<class E1, class E2>
+        BOOST_UBLAS_INLINE
+        matrix &assign (const binop<E1, E2, multOp> &o) {
+            self_type temporary = matrix_chain_controller(o);
+            matrix_assign<scalar_assign> (*this, temporary);
+            return *this;
+        }
+
         template<class AE>
         BOOST_UBLAS_INLINE
         matrix& operator += (const matrix_expression<AE> &ae) {
             self_type temporary (*this + ae);
-            return assign_temporary (temporary);
+            return assign_temporary (temporary); 
         }
+
+        template<class E1, class E2>
+        BOOST_UBLAS_INLINE
+        matrix& operator += (const binop<E1, E2, multOp> &o) {
+            self_type temporary (*this + matrix_chain_controller(o));
+            return assign_temporary(temporary);
+        }
+
         template<class C>          // Container assignment without temporary
         BOOST_UBLAS_INLINE
         matrix &operator += (const matrix_container<C> &m) {
@@ -452,12 +469,29 @@ namespace boost { namespace numeric {
             matrix_assign<scalar_plus_assign> (*this, ae);
             return *this;
         }
+
+        template<class E1, class E2>
+        BOOST_UBLAS_INLINE
+        matrix &plus_assign (const binop<E1, E2, multOp> &o) {
+            self_type temporary = matrix_chain_controller(o);
+            matrix_assign<scalar_plus_assign> (*this, temporary);
+            return *this;
+        }
+
         template<class AE>
         BOOST_UBLAS_INLINE
         matrix& operator -= (const matrix_expression<AE> &ae) {
             self_type temporary (*this - ae);
             return assign_temporary (temporary);
         }
+
+        template<class E1, class E2>
+        BOOST_UBLAS_INLINE
+        matrix& operator -= (const binop<E1, E2, multOp> &o) {
+            self_type temporary (*this - matrix_chain_controller(o));
+            return assign_temporary(temporary); 
+        }
+
         template<class C>          // Container assignment without temporary
         BOOST_UBLAS_INLINE
         matrix &operator -= (const matrix_container<C> &m) {
@@ -470,6 +504,15 @@ namespace boost { namespace numeric {
             matrix_assign<scalar_minus_assign> (*this, ae);
             return *this;
         }
+
+        template<class E1, class E2>
+        BOOST_UBLAS_INLINE
+        matrix &minus_assign (const binop<E1, E2, multOp> &o) {
+            self temporary = matrix_chain_controller(o);
+            matrix_assign<scalar_minus_assign> (*this, temporary);
+            return *this;
+        }
+
         template<class AT>
         BOOST_UBLAS_INLINE
         matrix& operator *= (const AT &at) {
