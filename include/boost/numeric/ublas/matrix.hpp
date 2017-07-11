@@ -508,7 +508,7 @@ namespace boost { namespace numeric {
         template<class E1, class E2>
         BOOST_UBLAS_INLINE
         matrix &minus_assign (const binop<E1, E2, multOp> &o) {
-            self temporary = matrix_chain_controller(o);
+            self_type temporary = matrix_chain_controller(o);
             matrix_assign<scalar_minus_assign> (*this, temporary);
             return *this;
         }
