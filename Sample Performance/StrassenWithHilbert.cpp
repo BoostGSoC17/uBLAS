@@ -38,6 +38,43 @@ void Matrix_Sub(int N, VVT &X, VVT &Y, VVT &Z){
     }
 }
 
+template<typename E1, typename E2>
+void Hilbert( E1 &M, E2 &subM,
+             int startx, int starty, int endx, int endy, int orientation,
+             int xoffset, int yoffset) {
+    if(startx == endx && starty == endy) {
+        //cout << startx << " " << starty << "\n";
+        M[xoffset+startx-1][yoffset+starty-1] = subM[startx-1][starty-1];
+        return;
+    }
+    int midx = (startx+endx)>>1;    // as it is for square matrix (2^k x 2^k)
+    int midy = (starty+endy)>>1;
+    if(orientation == 1) {
+        Hilbert(M, subM, midx+1, starty, endx, midy, 2, xoffset, yoffset);
+        Hilbert(M, subM, startx, starty, midx, midy, 1, xoffset, yoffset);
+        Hilbert(M, subM, startx, midy+1, midx, endy, 1, xoffset, yoffset);
+        Hilbert(M, subM, midx+1, midy+1, endx, endy, 3, xoffset, yoffset);
+    }
+    else if(orientation == 2) {
+        Hilbert(M, subM, midx+1, starty, endx, midy, 1, xoffset, yoffset);
+        Hilbert(M, subM, midx+1, midy+1, endx, endy, 2, xoffset, yoffset);
+        Hilbert(M, subM, startx, midy+1, midx, endy, 2, xoffset, yoffset);
+        Hilbert(M, subM, startx, starty, midx, midy, 4, xoffset, yoffset);
+    }
+    else if(orientation == 3) {
+        Hilbert(M, subM, startx, midy+1, midx, endy, 4, xoffset, yoffset);
+        Hilbert(M, subM, startx, starty, midx, midy, 3, xoffset, yoffset);
+        Hilbert(M, subM, midx+1, starty, endx, midy, 3, xoffset, yoffset);
+        Hilbert(M, subM, midx+1, midy+1, endx, endy, 1, xoffset, yoffset);
+    }
+    else {
+        Hilbert(M, subM, startx, midy+1, midx, endy, 3, xoffset, yoffset);
+        Hilbert(M, subM, midx+1, midy+1, endx, endy, 4, xoffset, yoffset);
+        Hilbert(M, subM, midx+1, starty, endx, midy, 4, xoffset, yoffset);
+        Hilbert(M, subM, startx, starty, midx, midy, 2, xoffset, yoffset);
+    }
+}
+
 template<typename T>
 void Strassen(uint N, VVT &A, VVT &B, VVT &C){
 
@@ -120,7 +157,7 @@ void Strassen(uint N, VVT &A, VVT &B, VVT &C){
     Matrix_Add((N>>1), AA, BB, C22);
 
     //Set the result to C[][N]
-    for(int i=0; i<N; i++) {
+    /*for(int i=0; i<N; i++) {
        for(int j=0; j<N; j++) {
           if(i<mid && j<mid)
             C[i][j] = C11[i][j];
@@ -131,7 +168,11 @@ void Strassen(uint N, VVT &A, VVT &B, VVT &C){
           else
             C[i][j] = C22[i-mid][j-mid];
        }
-    }
+    }*/
+    Hilbert(C, C21, 1, 1, mid, mid, 2, mid, 0);
+    Hilbert(C, C11, 1, 1, mid, mid, 1, 0, 0);
+    Hilbert(C, C12, 1, 1, mid, mid, 1, 0, mid);
+    Hilbert(C, C22, 1, 1, mid, mid, 3, mid, mid);
 
     A11.clear(); A12.clear(); A21.clear(); A22.clear();
     B11.clear(); B12.clear(); B21.clear(); B22.clear();
@@ -152,7 +193,7 @@ void multiply(uint N,VVT &A, VVT &B, VVT &C){
 uint N = 1;
 
 int main(){
-
+    
     while(N<=2048){
         std::vector<std::vector<int> > A(N,std::vector<int>(N,1));
         std::vector<std::vector<int> > B(N,std::vector<int>(N,1));
@@ -174,5 +215,6 @@ int main(){
         }*/
         N <<= 1; 
     }
+
     return 0;
 }
