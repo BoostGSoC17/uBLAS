@@ -2845,6 +2845,7 @@ namespace boost { namespace numeric { namespace ublas {
 
     struct valueOp {};
     struct multOp {};
+    struct addOp {};
 
     template<typename E1, typename E2, typename op = valueOp>
     struct binop {
@@ -2856,9 +2857,23 @@ namespace boost { namespace numeric { namespace ublas {
     };
 
     template<typename E1, typename E2>
+    BOOST_UBLAS_INLINE
     binop<E1, E2, multOp> operator * (const E1 &left, const E2 &right) {
         return binop<E1, E2, multOp> (left, right, multOp());
     }
+
+    template<typename E, typename E1, typename E2, typename OT>
+    BOOST_UBLAS_INLINE
+    binop<E, binop<E1, E2, OT>, addOp> operator + (const E &left, const binop<E1, E2, OT> &right) {
+        return binop<E, binop<E1, E2, OT>, addOp> (left, right, addOp());
+    }
+
+    template<typename E1, typename E2, typename OT, typename E>
+    BOOST_UBLAS_INLINE
+    binop<binop<E1, E2, OT>, E, addOp> operator + (const binop<E1, E2, OT> &left, const E &right) {
+        return binop<binop<E1, E2, OT>, E, addOp> (left, right, addOp());
+    }
+
 
     template<class E1, class E2, class F>
     struct matrix_binary_traits {
