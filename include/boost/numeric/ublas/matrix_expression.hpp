@@ -2852,8 +2852,41 @@ namespace boost { namespace numeric { namespace ublas {
         const E1 &left;
         const E2 &right;
 
-        binop(const E1 &left, const E2 &right, op opval) : left(left), right(right) {}
-        binop(const E1 &val) : left(val), right(val) {}
+        typedef E1 expression1_type;
+        typedef E2 expression2_type;
+        typedef op operation_type;
+
+        typedef binop<E1, E2, op> self_type;
+        typedef typename E1::const_closure_type expression1_closure_type;
+        typedef typename E2::const_closure_type expression2_closure_type;
+
+        typedef typename promote_traits<typename E1::size_type, typename E2::size_type>::promote_type size_type;
+        typedef typename promote_traits<typename E1::value_type, typename E2::value_type>::promote_type value_type;
+        typedef value_type const_reference;
+        typedef const_reference reference;
+        typedef const self_type const_closure_type;
+        typedef const_closure_type closure_type;
+        typedef unknown_orientation_tag orientation_category;
+        typedef unknown_storage_tag storage_category;
+
+
+        BOOST_UBLAS_INLINE
+        binop(const E1 &left, const E2 &right, op opval): 
+            left(left), right(right) {}
+        
+        BOOST_UBLAS_INLINE
+        binop(const E1 &val): 
+            left(val), right(val) {}
+
+        BOOST_UBLAS_INLINE
+        size_type size1() const {
+            return left.size1();
+        }
+
+        BOOST_UBLAS_INLINE
+        size_type size2() const {
+            return right.size2();
+        }
     };
 
     template<typename E1, typename E2>
