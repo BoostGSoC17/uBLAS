@@ -1162,6 +1162,156 @@ namespace boost { namespace numeric { namespace ublas {
         }
     };
 
+    struct addOp {
+
+        template<class E, class T>
+        void apply(E &M, T **C) {
+            typedef typename E::size_type size_type;
+            size_type size1_ = M.size1();
+            size_type size2_ = M.size2();
+
+            C = new T*[size1_];
+            for(size_type i=0; i<size1_; i++) {
+                C[i] = new T[size2_];
+            }
+
+            for(size_type i=0; i<size1_; i++) {
+                for(size_type j=0; j<size2_; j++) {
+                    C[i][j] = M(i, j);
+                }
+            }
+        }
+
+        template<class E1, class E2, class T>
+        void apply(const binop<E1, E2, multOp> &O, T **C) {
+            typedef multOp operator_type;
+            operator_type::apply(O, C); 
+        }
+
+        template<class E1, class E2, class E, class T>
+        void add(E1 **A, E2 **B, E **C, T size1_, T size2_) {
+            for(T i=0; i<size1_; i++) {
+                for(T j=0; j<size2_; j++) {
+                    C[i][j] = A[i][j] + B[i][j]; 
+                }
+            }
+        }
+        
+        template<class E1, class E2, class T>
+        void apply(const binop<E1, E2, addOp> &O, T **C) {
+            // addition generic lambda
+
+            T **A, **B;
+            auto Left = O.left, Right = O.right;
+            apply(Right, B);
+            apply(Left, A);
+
+            BOOST_UBLAS_SAME(Left.size1(), Right.size1()); 
+            BOOST_UBLAS_SAME(Left.size2(), Right.size2());
+
+            auto size1_ = O.size1(), size2_ = O.size2();
+            C = new T*[size1_];
+            for(auto i=0; i<size1_; i++) {
+                C[i] = new T[size2_];
+            }
+            add(A, B, C, size1_, size2_);
+            for(auto i=0; i<size1_; i++) {
+                delete [] A[i]; delete [] B[i];
+            }
+            delete [] A; delete [] B; 
+        }
+    };
+
+    struct multOp {
+
+        template<typename D, typename E>
+        void preProcess(D &dimensions, E &DP, E &splits) {
+            long int N = dimensions.size();
+
+            for(auto i=2; i<N;i++) {
+                BOOST_UBLAS_SAME(dimensions[i-1].second, dimensions[i].first);
+            }
+            
+            DP.resize(N, std::vector<long int>(N, 0));
+            splits.resize(N, std::vector<long int>(N, 0));
+            for(auto i=N-1; i>=1; i--) { 
+                for(auto j=i; j<=N-1; j++) {
+                    DP[i][j] = 1e9;
+                    for(auto k=i; k<j; k++) {
+                        long int temp = DP[i][k] + DP[k+1][j] + dimensions[i].first * dimensions[k].second * dimensions[j].second;
+                        if(DP[i][j] > temp) {
+                            DP[i][j] = temp; splits[i][j] = k;
+                        }
+                    }
+                    if(i==j)
+                        DP[i][j] = 0;    
+                }
+            }
+        }
+
+        template<typename E, typename V>
+        void getDimensions(const E &o, V &v) {
+            v.push_back(std::make_pair(o.size1(), o.size2()));
+        }
+
+        template<typename E1, typename E2, typename V>
+        void getDimensions(const binop<E1, E2, multOp> &o, V &v) {
+            getDimensions(o.left, v);
+            getDimensions(o.right, v);
+        }
+
+        template<typename T>
+        struct Memoize {
+            T **mat;
+            long int size1, size2;
+
+            void resize(long int size1_, long int size2_): size1(size1_), size2(size2_) {
+                mat = new T*[size1];
+                for(long int i=0; i<size1; i++) {
+                    mat[i] = new T[size2];
+                }
+            }
+        };
+
+        template<class E1>
+        void Memoization(const E &O, std::vector<Memoize> &M) {
+            Memoize temp;
+            auto size1_ = O.size1(), size2_ = O.size2();
+            temp.resize(size1_, size2_);
+            for(long int i=0; i<size1_; i++) {
+                for(long int j=0; j<size2_; j++) {
+                    temp.mat[i][j] = O(i, j);
+                }
+            }
+            M.push_back(temp);
+        }
+
+        template<class E1, class E2>
+        void Memoization(const binop<E1, E2, multOp> &O, std::vector<Memoize> &M) {
+            Memoization(O.left, M);
+            Memoization(O.right, M);
+        }
+
+        template<class E1, class E2, class T>
+        void matrix_chain_controller(const binop<E1, E2, multOp> &O, T **C) {
+            std::vector<std::pair<long int, long int> Dimensions; Dimensions.push_back(std::make_pair(0,0));
+            getDimensions(O, Dimensions);
+
+            std::vector<std::vector<long int> > DP, splits;
+            preProcess(Dimensions, DP, splits);
+
+            std::vector<Memoize<T> > matrices;
+            Memoization(O, matrices);
+
+            // Chaining mathod to be implemented
+        }
+
+        template<class E1, class E2, class T>
+        void apply(const binop<E1, E2, multOp> &O, T **C) {
+            matrix_chain_controller(O, C);
+        }
+     };
+
     // Binary returning matrix
     template<class M1, class M2, class TV>
     struct matrix_matrix_binary_functor {

@@ -174,6 +174,14 @@ namespace boost { namespace numeric {
             matrix_assign<scalar_assign> (*this, ae);
         }
 
+        template<class E1, class E2, class OT>
+        BOOST_UBLAS_INLINE
+        matrix (const binop<E1, E2, OT> &o):
+            matrix_container<self_type> (),
+            size1_ (o.size1()), size2_ (o.size2()), data_ (layout_type::storage_size (size1_, size2_)) {
+                chain_matrix_assign (*this, o);
+            }
+
         // Accessors
       /** Return the number of rows of the matrix
        * You can also use the free size<>() function in operation/size.hpp as size<1>(m) where m is a matrix
@@ -421,10 +429,10 @@ namespace boost { namespace numeric {
             return assign_temporary (temporary);
         }
 
-        template<class E1, class E2>
+        template<class E1, class E2, class OT>
         BOOST_UBLAS_INLINE  
-        matrix &operator = (const binop<E1, E2, multOp> &o) {
-            self_type temporary = matrix_chain_controller(o); 
+        matrix &operator = (const binop<E1, E2, OT> &o) {
+            self_type temporary (o); 
             return assign_temporary (temporary);  
         }  
 

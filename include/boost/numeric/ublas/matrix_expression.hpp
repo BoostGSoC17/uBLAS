@@ -2844,8 +2844,6 @@ namespace boost { namespace numeric { namespace ublas {
     };
 
     struct valueOp {};
-    struct multOp {};
-    struct addOp {};
 
     template<typename E1, typename E2, typename op = valueOp>
     struct binop {
@@ -2854,7 +2852,7 @@ namespace boost { namespace numeric { namespace ublas {
 
         typedef E1 expression1_type;
         typedef E2 expression2_type;
-        typedef op operation_type;
+        typedef op operator_type;
 
         typedef binop<E1, E2, op> self_type;
         typedef typename E1::const_closure_type expression1_closure_type;
@@ -2886,6 +2884,13 @@ namespace boost { namespace numeric { namespace ublas {
         BOOST_UBLAS_INLINE
         size_type size2() const {
             return right.size2();
+        }
+
+        BOOST_UBLAS_INLINE
+        template<typename T>
+        void operator () (T **C) const {
+            self_type O = binop<E1, E2, op>(left, right, operator_type());
+            operator_type::apply(O, C);
         }
     };
 
