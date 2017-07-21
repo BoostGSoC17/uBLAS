@@ -180,7 +180,7 @@ namespace boost { namespace numeric {
             matrix_container<self_type> (),
             size1_ (o.size1()), size2_ (o.size2()), data_ (layout_type::storage_size (size1_, size2_)) {
                 chain_matrix_assign (*this, o);
-            }
+        }
 
         // Accessors
       /** Return the number of rows of the matrix

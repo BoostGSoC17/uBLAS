@@ -2844,6 +2844,8 @@ namespace boost { namespace numeric { namespace ublas {
     };
 
     struct valueOp {};
+    struct addOp {};
+    struct multOp {};
 
     template<typename E1, typename E2, typename op = valueOp>
     struct binop {
@@ -2890,7 +2892,388 @@ namespace boost { namespace numeric { namespace ublas {
         template<typename T>
         void operator () (T **C) const {
             self_type O = binop<E1, E2, op>(left, right, operator_type());
-            operator_type::apply(O, C);
+            apply(O, C);
+        }
+
+        template<class E, class T>
+        void apply(E &M, T **C) {
+            typedef typename E::size_type size_type;
+            size_type size1_ = M.size1();
+            size_type size2_ = M.size2();
+
+            C = new T*[size1_];
+            for(size_type i=0; i<size1_; i++) {
+                C[i] = new T[size2_];
+            }
+
+            for(size_type i=0; i<size1_; i++) {
+                for(size_type j=0; j<size2_; j++) {
+                    C[i][j] = M(i, j);
+                }
+            }
+        }
+
+        template<class T1, class T2, class T>
+        void apply(const binop<T1, T2, addOp> &O, T **C) {
+
+            T **A, **B;
+            auto Left = O.left, Right = O.right;
+            apply(Right, B);
+            apply(Left, A);
+
+            BOOST_UBLAS_SAME(Left.size1(), Right.size1()); 
+            BOOST_UBLAS_SAME(Left.size2(), Right.size2());
+
+            auto size1_ = O.size1(), size2_ = O.size2();
+            C = new T*[size1_];
+            for(auto i=0; i<size1_; i++) {
+                C[i] = new T[size2_];
+            }
+            add(A, B, C, size1_, size2_);
+            for(auto i=0; i<size1_; i++) {
+                delete [] A[i]; delete [] B[i];
+            }
+            delete [] A; delete [] B; 
+        }
+
+        template<class T1, class T2, class T>
+        void apply(const binop<T1, T2, multOp> &O, T **C) {
+            matrix_chain_controller(O, C);
+        }
+
+        template<class T1, class T2, class E, class T>
+        void add(T1 **A, T2 **B, E **C, T size1_, T size2_) {
+            for(T i=0; i<size1_; i++) {
+                for(T j=0; j<size2_; j++) {
+                    C[i][j] = A[i][j] + B[i][j]; 
+                }
+            }
+        }
+
+        template<typename D, typename E>
+        void preProcess(D &dimensions, E &DP, E &splits) {
+            long int N = dimensions.size();
+
+            for(auto i=2; i<N;i++) {
+                BOOST_UBLAS_SAME(dimensions[i-1].second, dimensions[i].first);
+            }
+            
+            DP.resize(N, std::vector<long int>(N, 0));
+            splits.resize(N, std::vector<long int>(N, 0));
+            for(auto i=N-1; i>=1; i--) { 
+                for(auto j=i; j<=N-1; j++) {
+                    DP[i][j] = 1e9;
+                    for(auto k=i; k<j; k++) {
+                        long int temp = DP[i][k] + DP[k+1][j] + dimensions[i].first * dimensions[k].second * dimensions[j].second;
+                        if(DP[i][j] > temp) {
+                            DP[i][j] = temp; splits[i][j] = k;
+                        }
+                    }
+                    if(i==j)
+                        DP[i][j] = 0;    
+                }
+            }
+        }
+
+        template<typename E, typename V>
+        void getDimensions(const E &o, V &v) {
+            v.push_back(std::make_pair(o.size1(), o.size2()));
+        }
+
+        template<typename T1, typename T2, typename V>
+        void getDimensions(const binop<T1, T2, multOp> &o, V &v) {
+            getDimensions(o.left, v);
+            getDimensions(o.right, v);
+        }
+
+        template<typename T>
+        struct Memoize {
+            T **mat;
+            long int size1, size2;
+
+            void resize(long int size1_, long int size2_) {
+                size1 = size1_; size2 =size2_;
+                mat = new T*[size1];
+                for(long int i=0; i<size1; i++) {
+                    mat[i] = new T[size2];
+                }
+            }
+        };
+
+        template<class E, class T>
+        void Memoization(const E &O, std::vector<Memoize<T> > &M) {
+            Memoize<T> temp;
+            auto size1_ = O.size1(), size2_ = O.size2();
+            temp.resize(size1_, size2_);
+            for(long int i=0; i<size1_; i++) {
+                for(long int j=0; j<size2_; j++) {
+                    temp.mat[i][j] = O(i, j);
+                }
+            }
+            M.push_back(temp);
+        }
+
+        template<class T1, class T2, class T>
+        void Memoization(const binop<T1, T2, multOp> &O, std::vector<Memoize<T> > &M) {
+            Memoization(O.left, M);
+            Memoization(O.right, M);
+        }
+
+        template<class E, class T, class size_type>
+        void allocate(E &memo, T **C, size_type Size) {
+            C = new T*[Size];
+            for(auto i=0; i<Size; i++) {
+                C[i] = new T[Size]();
+            }
+            for(auto i=0; i<memo.size1; i++) {
+                for(auto j=0; j<memo.size2; j++) {
+                    C[i][j] = memo.mat[i][j];
+                }
+            }
+        }
+
+        template<class T, class size_type>
+        void Resize(T **A, size_type oldSize, size_type newSize) {
+            T **B;
+            B = new T*[oldSize];
+            for(size_type i=0; i<oldSize; i++) {
+                B[i] = new T[oldSize];
+                for(size_type j=0; j<oldSize; j++) {
+                    B[i][j] = A[i][j];
+                }
+                delete [] A[i];
+            }
+            delete [] A;
+            A = new T*[newSize];
+            for(size_type i=0; i<newSize; i++) {
+                A[i] = new T[newSize]();
+                for(size_type j=0; j<oldSize; j++) {
+                    A[i][j] = B[i][j];
+                }
+                if(i<oldSize)
+                    delete [] B[i];
+            }
+            delete [] B;
+        }
+
+
+        template<class T1, class T2, class T, class size_type>
+        void Chaining(T1 &memo, T2 &splits, long int i, long int j, T **C, size_type &Size) {
+            if(i == j) {
+                Size = getSize(memo[i-1].size1, memo[i-1].size2);
+                allocate(memo[i-1], C, Size);
+            }
+            T **A, **B;
+            size_type sizeA, sizeB;
+            Chaining(memo, splits, i, splits[i][j], A, sizeA);
+            Chaining(memo, splits, splits[i][j]+1, j, B, sizeB);
+            Size = getSize(sizeA, sizeB);
+            
+            Resize(A, sizeA, Size); 
+            Resize(B, sizeB, Size);
+
+            C = new T*[Size];
+            for(size_type i=0; i<Size; i++) {
+                C[i] = new T[i];
+            }
+            // Strassen's Algo check karna hai
+            productController(A, B, C, Size);
+
+            for(size_type i=0; i<Size; i++) {
+                delete [] A[i]; delete [] B[i];
+            }
+            delete A; delete B;
+            if(i == 1 && j == splits.size()-1) {
+                memo.clear(); splits.clear();
+            }
+
+        }
+
+        template<class T1, class T2, class T>
+        void matrix_chain_controller(const binop<T1, T2, multOp> &O, T **C) {
+            std::vector<std::pair<long int, long int> > Dimensions; Dimensions.push_back(std::make_pair(0,0));
+            getDimensions(O, Dimensions);
+
+            std::vector<std::vector<long int> > DP, splits;
+            preProcess(Dimensions, DP, splits);
+
+            std::vector<Memoize<T> > matrices;
+            Memoization(O, matrices);
+
+            long int sz;
+            // Chaining mathod to be implemented
+            Chaining(matrices, splits, 1, matrices.size(), C, sz);
+        }
+
+        // Strassen's Part
+        template<typename T>
+        T getSize(T size1, T size2) {
+            T maxSize = (size1 > size2) ? size1:size2;
+            T Size = 1;
+            while(Size < maxSize) {
+                Size <<= 1;
+            }
+            return Size;
+        }
+
+        template<typename T, typename size_type>
+        static BOOST_UBLAS_INLINE
+        void Trivial(T **A, T **B, T **C, size_type I, size_type J, size_type K) {
+            //int I = A.size(), K = A[0].size(), J = B[0].size();
+            for(size_type i=0; i<I; i++) {
+                for(size_type j=0; j<J; j++) {
+                    C[i][j] = 0;
+                    for(size_type k=0; k<K; k++) {
+                        C[i][j] += A[i][k] * B[k][j];
+                    }
+                }
+            }
+        }
+
+        template<typename T>
+        static BOOST_UBLAS_INLINE
+        void Matrix_Add(int N, T **X, T **Y, T **Z){
+            for(int i=0; i<N; i++){
+                for(int j=0; j<N; j++){
+                    Z[i][j] = X[i][j] + Y[i][j];
+                }
+            }
+        }
+
+        template<typename T>
+        static BOOST_UBLAS_INLINE
+        void Matrix_Sub(int N, T **X, T **Y, T **Z){
+            for(int i=0; i<N; i++){
+                for(int j=0; j<N; j++){
+                    Z[i][j] = X[i][j] - Y[i][j];
+                }
+            }
+        }
+
+        template<typename T, class size_type>
+        static BOOST_UBLAS_INLINE 
+        void Strassen(size_type N, T **A, T **B, T **C) {
+            if(N == 512) {
+                Trivial(A, B, C, N, N, N);
+                return;
+            } 
+            
+            T **A11 = new T*[N]; T **A12 = new T*[N]; T **A21 = new T*[N]; T **A22 = new T*[N];
+            T **B11 = new T*[N]; T **B12 = new T*[N]; T **B21 = new T*[N]; T **B22 = new T*[N];
+            T **C11 = new T*[N]; T **C12 = new T*[N]; T **C21 = new T*[N]; T **C22 = new T*[N];
+            T **P1 = new T*[N]; T **P2 = new T*[N]; T **P3 = new T*[N]; T **P4 = new T*[N]; T **P5 = new T*[N]; T **P6 = new T*[N]; T **P7 = new T*[N];
+            T **AA = new T*[N]; T **BB = new T*[N];
+
+            for(size_type i=0; i<N; i++) {
+                A11[i] = new T[N]; A12[i] = new T[N]; A21[i] = new T[N]; A22[i] = new T[N];
+                B11[i] = new T[N]; B12[i] = new T[N]; B21[i] = new T[N]; B22[i] = new T[N];
+                C11[i] = new T[N]; C12[i] = new T[N]; C21[i] = new T[N]; C22[i] = new T[N];
+                P1[i] = new T[N]; P2[i] = new T[N]; P3[i] = new T[N]; P4[i] = new T[N]; P5[i] = new T[N]; P6[i] = new T[N]; P7[i] = new T[N];
+                AA[i] = new T[N]; BB[i] = new T[N];
+            }
+
+            size_type mid = N>>1;
+            for(uint i=0; i<N; i++){
+                for(uint j=0;j<N;j++){
+                    if(i<mid && j<mid)
+                        A11[i][j] = A[i][j];
+                    else if(i<mid)
+                        A12[i][j-mid] = A[i][j];
+                    else if(i>=mid && j<mid)
+                        A21[i-mid][j] = A[i][j];
+                    else
+                        A22[i-mid][j-mid] = A[i][j];
+
+                    if(i<mid && j<mid)
+                        B11[i][j] = B[i][j];
+                    else if(i<mid)
+                        B12[i][j-mid] = B[i][j];
+                    else if(i>=mid && j<mid)
+                        B21[i-mid][j] = B[i][j];
+                    else
+                        B22[i-mid][j-mid] = B[i][j];
+                }
+            }
+
+            Matrix_Add(N>>1, A11, A22, AA);
+            Matrix_Add(N>>1, B11, B22, BB);
+            Strassen(N>>1, AA, BB, P1);
+
+            Matrix_Add(N>>1, A21, A22, AA);
+            Strassen(N>>1, AA, B11, P2);
+
+            Matrix_Sub(N>>1, B12, B22, BB);
+            Strassen(N>>1, A11, BB, P3);
+
+            //Calculate M4 = A3 × (B2 - B0)
+            Matrix_Sub((N>>1), B21, B11, BB);
+            Strassen((N>>1), A22, BB, P4);
+
+            //Calculate M5 = (A0 + A1) × B3
+            Matrix_Add((N>>1), A11, A12, AA);
+            Strassen((N>>1), AA, B22, P5);
+
+            //Calculate M6 = (A2 - A0) × (B0 + B1)
+            Matrix_Sub((N>>1), A21, A11, AA);
+            Matrix_Add((N>>1), B11, B12, BB);
+            Strassen((N>>1), AA, BB, P6);
+
+            //Calculate M7 = (A1 - A3) × (B2 + B3)
+            Matrix_Sub((N>>1), A12, A22, AA);
+            Matrix_Add((N>>1), B21, B22, BB);
+            Strassen((N>>1), AA, BB, P7);
+
+            //Calculate C0 = M1 + M4 - M5 + M7
+            Matrix_Add((N>>1), P1, P4, AA);
+            Matrix_Sub((N>>1), P7, P5, BB);
+            Matrix_Add((N>>1), AA, BB, C11);
+
+            //Calculate C1 = M3 + M5
+            Matrix_Add((N>>1), P3, P5, C12);
+
+            //Calculate C2 = M2 + M4
+            Matrix_Add((N>>1), P2, P4, C21);
+
+            //Calculate C3 = M1 - M2 + M3 + M6
+            Matrix_Sub((N>>1), P1, P2, AA);
+            Matrix_Add((N>>1), P3, P6, BB);
+            Matrix_Add((N>>1), AA, BB, C22);
+
+            //Set the result to C[][N]
+             for(int i=0; i<N; i++) {
+                for(int j=0; j<N; j++) {
+                  if(i<mid && j<mid)
+                    C[i][j] = C11[i][j];
+                  else if(i<mid)
+                    C[i][j] = C12[i][j-mid];
+                  else if(i>=mid && j<mid)
+                    C[i][j] = C21[i-mid][j];
+                  else
+                    C[i][j] = C22[i-mid][j-mid];
+                }
+            }
+
+            for(size_type i=0; i<N; i++) {
+                delete [] A11[i]; delete [] A12[i]; delete [] A21[i]; delete [] A22[i];
+                delete [] B11[i]; delete [] B12[i]; delete [] B21[i]; delete [] B22[i];
+                delete [] C11[i]; delete [] C12[i]; delete [] C21[i]; delete [] C22[i];
+                delete [] P1[i]; delete [] P2[i]; delete [] P3[i]; delete [] P4[i]; delete [] P5[i]; delete [] P6[i]; delete [] P7[i];
+                delete [] AA[i]; delete [] BB[i];
+            }
+            delete [] A11; delete [] A12; delete [] A21; delete [] A22;
+            delete [] B11; delete [] B12; delete [] B21; delete [] B22;
+            delete [] C11; delete [] C12; delete [] C21; delete [] C22;
+            delete [] P1; delete [] P2; delete [] P3; delete [] P4; delete [] P5; delete [] P6; delete [] P7;
+            delete [] AA; delete [] BB;
+        }
+
+        template<class T, class size_type>
+        void productController(T **A, T **B, T **C, size_type Size) {
+            if(Size < 512) {
+                Trivial(A, B, C, Size, Size, Size);
+                return;
+            }
+            Strassen(Size, A, B, C);
         }
     };
 
