@@ -1162,6 +1162,10 @@ namespace boost { namespace numeric { namespace ublas {
         }
     };
 
+    struct addition_resolve {
+
+    };
+
     // Binary returning matrix
     template<class M1, class M2, class TV>
     struct matrix_matrix_binary_functor {

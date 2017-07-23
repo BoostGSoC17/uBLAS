@@ -76,6 +76,8 @@ namespace boost { namespace numeric {
         }
     }
 
+    struct unary_functor {};
+
     /** \brief A dense matrix of values of type \c T.
      *
      * For a \f$(m \times n)\f$-dimensional matrix and \f$ 0 \leq i < m, 0 \leq j < n\f$, every element \f$ m_{i,j} \f$ is mapped to 
@@ -105,6 +107,7 @@ namespace boost { namespace numeric {
         typedef typename A::difference_type difference_type;
         typedef T value_type;
         typedef const T &const_reference;
+        typedef unary_functor functor_type;
         typedef T &reference;
         typedef A array_type;
         typedef const matrix_reference<const self_type> const_closure_type;
@@ -5253,6 +5256,7 @@ namespace boost { namespace numeric {
         typedef std::ptrdiff_t difference_type;
         typedef T value_type;
         typedef const T &const_reference;
+        typedef unary_functor functor_type;
         typedef T &reference;
         typedef const T *const_pointer;
         typedef T *pointer;
