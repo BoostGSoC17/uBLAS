@@ -1529,7 +1529,22 @@ namespace detail {
     template<class M, class E>
     BOOST_UBLAS_INLINE
     void chain_matrix_assign(M &m, const E &O, column_major_tag) {
+        typedef typename M::size_type size_type;
+        typedef typename M::value_type value_type;
         
+        std::vector<std::vector<value_type> > C;
+        O(C);
+        
+        for(size_type j=0; j<m.size2(); j++) {
+            for(size_type i=0; i<m.size1(); i++) {
+                m(i,j) = C[i][j];
+            }
+        }
+
+        for(size_type i=0; i<C.size();i++) {
+            C[i].clear();
+        }
+        C.clear();
     }
 
     template<class SC, class RI1, class RI2>
