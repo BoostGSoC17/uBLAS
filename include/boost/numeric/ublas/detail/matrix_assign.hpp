@@ -1500,7 +1500,6 @@ namespace detail {
     void chain_matrix_assign(M &m, const E &O) {
         // Take into consideration Orientation Category
         // AND storage category.
-        std::cout << "OYE HOYE\n";
         typedef typename boost::mpl::if_<boost::is_same<typename M::orientation_category, unknown_orientation_tag>,
                                           typename E::orientation_category ,
                                           typename M::orientation_category >::type orientation_category;
@@ -1510,10 +1509,9 @@ namespace detail {
     template<class M, class E>
     BOOST_UBLAS_INLINE
     void chain_matrix_assign(M &m, const E &O, row_major_tag) {
-        std::cout << "HOYE HOYE HOYE\n";
         typedef typename M::size_type size_type;
         typedef typename M::value_type value_type;
-        //size_type Size;
+        
         std::vector<std::vector<value_type> > C;
         O(C);
         for(size_type i=0; i<m.size1(); i++) {
@@ -1521,10 +1519,7 @@ namespace detail {
                 m(i,j) = C[i][j];
             }
         }
-        /*for(size_type i=0; i<Size; i++) {
-            delete [] C[i];
-        }
-        delete [] C;*/
+
         for(size_type i=0; i<C.size();i++) {
             C[i].clear();
         }
@@ -1536,15 +1531,6 @@ namespace detail {
     void chain_matrix_assign(M &m, const E &O, column_major_tag) {
         
     }
-
-
-
-
-
-
-
-
-
 
     template<class SC, class RI1, class RI2>
     struct matrix_swap_traits {

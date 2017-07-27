@@ -2893,7 +2893,6 @@ namespace boost { namespace numeric { namespace ublas {
         BOOST_UBLAS_INLINE
         void operator () (T &C) const {
             self_type O = binop<E1, E2, op>(left, right, operator_type());
-            std::cout << "Opertor () (T &C) me aa gaye\n";
             apply(O, C);
         }
 
@@ -2970,21 +2969,18 @@ namespace boost { namespace numeric { namespace ublas {
         template<class T1, class T2, class T>
         static void apply(const binop<T1, T2, addOp> &O, std::vector<std::vector<T> > &C) {
 
-            std::cout << "Line 2973, matrix_expression\n";
             std::vector<std::vector<T> > A, B;
             auto Left = O.left, Right = O.right;
             apply(Right, B);
-            std::cout << "Going left now, Line 2977\n";
             apply(Left, A);
 
             BOOST_UBLAS_SAME(Left.size1(), Right.size1()); 
             BOOST_UBLAS_SAME(Left.size2(), Right.size2());
 
             auto size1_ = O.size1(), size2_ = O.size2();
-            //C = new T*[size1_];
+        
             C.resize(size1_);
             for(auto i=0; i<size1_; i++) {
-                //C[i] = new T[size2_];
                 C[i].resize(size2_);
             }
             add(A, B, C, size1_, size2_);
@@ -2997,8 +2993,6 @@ namespace boost { namespace numeric { namespace ublas {
 
         template<class T1, class T2, class T>
         static void apply(const binop<T1, T2, multOp> &O, T &C) {
-
-            std::cout << "Line 3001, matrix_expression\n";
             matrix_chain_controller(O, C);
         }
 
@@ -3049,17 +3043,13 @@ namespace boost { namespace numeric { namespace ublas {
 
         template<typename T>
         struct Memoize {
-            //T **mat;
+
             std::vector<std::vector<T> > mat;
             long int size1, size2;
 
             void resize(long int size1_, long int size2_) {
                 size1 = size1_; size2 = size2_;
-                //mat = new T*[size1];
                 mat.resize(size1_, std::vector<T>(size2_, 0));
-                //for(long int i=0; i<size1; i++) {
-                //    mat[i] = new T[size2];
-                //}
             }
         };
 
@@ -3087,101 +3077,33 @@ namespace boost { namespace numeric { namespace ublas {
             for(auto i=0; i<memo.size1; i++) {
                 for(auto j=0; j<memo.size2; j++) {
                     C[i][j] = memo.mat[i][j];
-                    //std::cout << "C[i][j] = " << C[i][j] << "\t";
                 }
-                //std::cout <<"\n";
             }
-        }
-
-        template<class T, class size_type>
-        static void Resize(T **A, size_type oldSize, size_type newSize) {
-            std::cout << "Entered Resize\n";
-            T **B;
-            B = new T*[oldSize];
-            for(size_type i=0; i<oldSize; i++) {
-                B[i] = new T[oldSize];
-                std::cout << "-----\n";
-                for(size_type j=0; j<oldSize; j++) {
-                    std::cout << "+++\n";
-                    B[i][j] = A[i][j];
-                }
-                delete [] A[i];
-            }
-            delete [] A;
-            std::cout << "mid resize\n";
-            A = new T*[newSize];
-            for(size_type i=0; i<newSize; i++) {
-                A[i] = new T[newSize]();
-                for(size_type j=0; j<oldSize; j++) {
-                    A[i][j] = B[i][j];
-                }
-                if(i<oldSize)
-                    delete [] B[i];
-            }
-            delete [] B;
-            std::cout << "Exited Resize\n";
         }
 
 
         template<class T1, class T2, class T, class size_type>
         static void Chaining(T1 &memo, T2 &splits, long int i, long int j, std::vector<std::vector<T> > &C, size_type &Size) {
             
-            std::cout << "Line 3129, matrix_expression\n";
-            std::cout << "i = " << i << "\tj = " << j << "\n"; 
             if(i == j) {
-                //Size = getSize(memo[i-1].size1, memo[i-1].size2);
-                /*C = new T*[Size];
-                for(auto i=0; i<Size; i++) {
-                    C[i] = new T[Size]();
-                }
-                allocate(memo[i-1], C, Size);*/
                 Size = getSize(memo[i-1].size1, memo[i-1].size2);
                 C.resize(memo[i-1].size1, std::vector<T>(memo[i-1].size2, 0));
                 allocate(memo[i-1], C);
-                for(auto i=0; i<C.size();i++) {
-                    for(auto j=0; j<C[i].size();j++) {
-                        std::cout << C[i][j] << "\t";
-                    }
-                    std::cout << "\n";
-                }
                 return;
             }
+
             std::vector<std::vector<T> > A, B;
-            size_type sizeA, sizeB; // To allocate space here only
+            size_type sizeA, sizeB; 
             Chaining(memo, splits, i, splits[i][j], A, sizeA);
             Chaining(memo, splits, splits[i][j]+1, j, B, sizeB);
             Size = getSize(std::max(memo[i-1].size1, memo[i-1].size2), 
                            std::max(memo[j-1].size1, memo[j-1].size2));
-            
-            std::cout << "sizeA = " << sizeA << "sizeB = " << sizeB << "size = " << Size << "\n";
 
-            //Resize(A, sizeA, Size);
-            for(auto i=0; i<A.size(); i++) {
-                for(auto j=0; j<A[i].size(); j++) {
-                    std::cout << "A[i][j] = " << A[i][j] << "\t";
-                }
-                std::cout <<"\n";
-            }
-            std::cout << "\n";
-            for(auto i=0; i<B.size(); i++) {
-                for(auto j=0; j<B[i].size(); j++) {
-                    std::cout << "B[i][j] = " << B[i][j] << "\t";
-                }
-                std::cout <<"\n";
-            }
-            //Resize(B, sizeB, Size);
-
-
-            /*C = new T*[Size];
-            for(size_type i=0; i<Size; i++) {
-                C[i] = new T[i];
-            }*/
             C.resize(memo[i-1].size1, std::vector<T>(memo[j-1].size2));
-            std::cout << C.size() << "  -------  " << C[0].size() << "\n";
-            // Strassen's Algo check karna hai
+            
+            // Strassen's Algo check done
             productController(A, B, C, Size);
-            std::cout << "returned from productController\n";   
-
+            
             for(size_type z=0; z<memo[i-1].size1; z++) {
                 A[z].clear();
             }
@@ -3198,30 +3120,18 @@ namespace boost { namespace numeric { namespace ublas {
         template<class T1, class T2, class T>
         static void matrix_chain_controller(const binop<T1, T2, multOp> &O, 
                                             std::vector<std::vector<T> > &C) {
-            
-            std::cout << "Line 3189, matrix_expression\n";
             std::vector<std::pair<long int, long int> > Dimensions; Dimensions.push_back(std::make_pair(0,0));
             getDimensions(O, Dimensions);
-
-            std::cout << "Line 3193, matrix_expression\n";
 
             std::vector<std::vector<long int> > DP, splits;
             preProcess(Dimensions, DP, splits);
 
-            std::cout << "Line 3198, matrix_expression\n";
-
             std::vector<Memoize<T> > matrices;
             Memoization(O, matrices);
-
-            std::cout << "matrices size = " << matrices.size() << "\n";
-
-            std::cout << "Line 3205, matrix_expression\n";
 
             // Chaining mathod to be implemented
             int Size;
             Chaining(matrices, splits, 1, matrices.size(), C, Size);
-
-            std::cout << "Line 3211, matrix_expression\n";
         }
 
         // Strassen's Part
@@ -3391,7 +3301,6 @@ namespace boost { namespace numeric { namespace ublas {
                                       std::vector<std::vector<T> > &matB, 
                                       std::vector<std::vector<T> > &matC, 
                                       size_type Size) {
-            std::cout << "Entered productController\n";
             T **A, **B, **C;
             A = new T*[Size]; B = new T*[Size]; C = new T*[Size];
             for(size_type i=0; i<Size; i++) {
@@ -3407,20 +3316,6 @@ namespace boost { namespace numeric { namespace ublas {
                 for(size_type j=0; j<matB[i].size(); j++) {
                     B[i][j] = matB[i][j];
                 }
-            }
-
-            for(auto i=0 ;i<Size; i++) {
-                for(auto j=0; j<Size; j++) {
-                    std::cout << "PA[i][j] = " << A[i][j] << "\t";
-                }
-                std::cout << "\n";
-            }
-
-            for(auto i=0 ;i<Size; i++) {
-                for(auto j=0; j<Size; j++) {
-                    std::cout << "PB[i][j] = " << B[i][j] << "\t";
-                }
-                std::cout << "\n";
             }
 
             if(Size < 512) {
