@@ -1525,6 +1525,10 @@ namespace detail {
             delete [] C[i];
         }
         delete [] C;*/
+        for(size_type i=0; i<C.size();i++) {
+            C[i].clear();
+        }
+        C.clear();
     }
 
     template<class M, class E>
