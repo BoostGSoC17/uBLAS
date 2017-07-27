@@ -1514,7 +1514,7 @@ namespace detail {
         typedef typename M::size_type size_type;
         typedef typename M::value_type value_type;
         //size_type Size;
-        value_type **C;
+        std::vector<std::vector<value_type> > C;
         O(C);
         for(size_type i=0; i<m.size1(); i++) {
             for(size_type j=0; j<m.size2(); j++) {
