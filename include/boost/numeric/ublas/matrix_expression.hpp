@@ -2846,6 +2846,7 @@ namespace boost { namespace numeric { namespace ublas {
 
     struct valueOp {};
     struct addOp {};
+    struct subOp {};
     struct multOp {};
 
     template<typename E1, typename E2, typename op = valueOp>
@@ -2901,10 +2902,6 @@ namespace boost { namespace numeric { namespace ublas {
         T operator () (size_type i, size_type j) {
             return left(i, j);
         }
-
-        /*template<class E1, class E2, class T>
-        BOOST_UBLAS_INLINE
-        void apply(const binop<E1, E2, addOp> &O, )*/
 
         template<class T, class L, class A, class E>
         static void apply(matrix<T, L, A> &M, E &C) {
@@ -2992,6 +2989,30 @@ namespace boost { namespace numeric { namespace ublas {
         }
 
         template<class T1, class T2, class T>
+        static void apply(const binop<T1, T2, subOp> &O, std::vector<std::vector<T> > &C) {
+            std::vector<std::vector<T> > A, B;
+            auto Left = O.left, Right = O.right;
+            apply(Right, B);
+            apply(Left, A);
+
+            BOOST_UBLAS_SAME(Left.size1(), Right.size1());
+            BOOST_UBLAS_SAME(Left.size2(), Right.size2());
+
+            auto size1_ = O.size1(), size2_ = O.size2();
+
+            C.resize(size1_);
+            for(auto i=0; i<size1_; i++) {
+                C[i].resize(size2_);
+            }
+            subtract(A, B, C, size1_, size2_);
+
+            for(auto i=0; i<size1_; i++){
+                A[i].clear(); B[i].clear();
+            }
+            A.clear(); B.clear();
+        }
+
+        template<class T1, class T2, class T>
         static void apply(const binop<T1, T2, multOp> &O, T &C) {
             matrix_chain_controller(O, C);
         }
@@ -3001,6 +3022,15 @@ namespace boost { namespace numeric { namespace ublas {
             for(T i=0; i<size1_; i++) {
                 for(T j=0; j<size2_; j++) {
                     C[i][j] = A[i][j] + B[i][j]; 
+                }
+            }
+        }
+
+        template<class T1, class T2, class E, class T>
+        static void subtract(T1 &A, T2 &B, E &C, T size1_, T size2_) {
+            for(T i=0; i<size1_; i++) {
+                for(T j=0; j<size2_; j++) {
+                    C[i][j] = A[i][j] - B[i][j]; 
                 }
             }
         }
@@ -3352,6 +3382,18 @@ namespace boost { namespace numeric { namespace ublas {
     BOOST_UBLAS_INLINE
     binop<binop<E1, E2, OT>, E, addOp> operator + (const binop<E1, E2, OT> &left, const E &right) {
         return binop<binop<E1, E2, OT>, E, addOp> (left, right, addOp());
+    }
+
+    template<typename E, typename E1, typename E2, typename OT>
+    BOOST_UBLAS_INLINE
+    binop<E, binop<E1, E2, OT>, subOp> operator - (const E &left, const binop<E1, E2, OT> &right) {
+        return binop<E, binop<E1, E2, OT>, subOp> (left, right, subOp());
+    }
+
+    template<typename E1, typename E2, typename OT, typename E>
+    BOOST_UBLAS_INLINE
+    binop<binop<E1, E2, OT>, E, subOp> operator - (const binop<E1, E2, OT> &left, const E &right) {
+        return binop<binop<E1, E2, OT>, E, subOp> (left, right, subOp());
     }
 
 
