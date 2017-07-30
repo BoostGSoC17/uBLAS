@@ -1512,7 +1512,15 @@ namespace detail {
         typedef typename M::size_type size_type;
         typedef typename M::value_type value_type;
         
-        std::vector<std::vector<value_type> > C;
+        //std::vector<std::vector<value_type> > C;
+        value_type **C;
+        size_type size1_ = O.size1(), size2_ = O.size2();
+
+        C = new value_type*[size1_];
+        for(size_type i=0; i<size1_; i++) {
+            C[i] = new value_type[size2_];
+        }   
+
         O(C);
         for(size_type i=0; i<m.size1(); i++) {
             for(size_type j=0; j<m.size2(); j++) {
@@ -1520,10 +1528,10 @@ namespace detail {
             }
         }
 
-        for(size_type i=0; i<C.size();i++) {
-            C[i].clear();
+        for(size_type i=0; i<size1_;i++) {
+            delete [] C[i];
         }
-        C.clear();
+        delete [] C;
     }
 
     template<class M, class E>

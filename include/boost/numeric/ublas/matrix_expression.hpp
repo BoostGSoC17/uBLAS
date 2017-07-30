@@ -2892,7 +2892,7 @@ namespace boost { namespace numeric { namespace ublas {
 
         template<typename T>
         BOOST_UBLAS_INLINE
-        void operator () (T &C) const {
+        void operator () (T **C) const {
             self_type O = binop<E1, E2, op>(left, right, operator_type());
             apply(O, C);
         }
@@ -2904,17 +2904,18 @@ namespace boost { namespace numeric { namespace ublas {
         }
 
         template<class T, class L, class A, class E>
-        static void apply(matrix<T, L, A> &M, E &C) {
+        static void apply(matrix<T, L, A> &M, E **C) {
             typedef typename matrix<T, L, A>::size_type size_type;
             size_type size1_ = M.size1();
             size_type size2_ = M.size2();
 
-            //C = new E*[size1_];
+            /*C = new E*[size1_];
             C.resize(size1_);
             for(size_type i=0; i<size1_; i++) {
                 //C[i] = new E[size2_];
                 C[i].resize(size2_);
             }
+            */
 
             for(size_type i=0; i<size1_; i++) {
                 for(size_type j=0; j<size2_; j++) {
@@ -2924,17 +2925,17 @@ namespace boost { namespace numeric { namespace ublas {
         }
 
         template<class T, std::size_t N, std::size_t M, class E>
-        static void apply(c_matrix<T, N, M> &m, E &C) {
+        static void apply(c_matrix<T, N, M> &m, E **C) {
             typedef typename c_matrix<T, N, M>::size_type size_type;
             size_type size1_ = m.size1();
             size_type size2_ = m.size2();
 
-            //C = new E*[size1_];
+            /*C = new E*[size1_];
             C.resize(size1_);
             for(size_type i=0; i<size1_; i++) {
                 //C[i] = new E[size2_];
                 C[i].resize(size2_);
-            }
+            }*/
 
             for(size_type i=0; i<size1_; i++) {
                 for(size_type j=0; j<size2_; j++) {
@@ -2944,17 +2945,17 @@ namespace boost { namespace numeric { namespace ublas {
         }
 
         template<class T, std::size_t M, std::size_t N, class E>
-        static void apply(bounded_matrix<T, M, N> &m, E &C) {
+        static void apply(bounded_matrix<T, M, N> &m, E **C) {
             typedef typename bounded_matrix<T, M, M>::size_type size_type;
             size_type size1_ = m.size1();
             size_type size2_ = m.size2();
 
-            //C = new E*[size1_];
+            /*C = new E*[size1_];
             C.resize(size1_);
             for(size_type i=0; i<size1_; i++) {
                 //C[i] = new E[size2_];
                 C[i].resize(size2_);
-            }
+            }*/
 
             for(size_type i=0; i<size1_; i++) {
                 for(size_type j=0; j<size2_; j++) {
@@ -2964,34 +2965,68 @@ namespace boost { namespace numeric { namespace ublas {
         }
 
         template<class T1, class T2, class T>
-        static void apply(const binop<T1, T2, addOp> &O, std::vector<std::vector<T> > &C) {
-
-            std::vector<std::vector<T> > A, B;
+        static void apply(const binop<T1, T2, addOp> &O, T **C) {
+            //std::vector<std::vector<T> > A, B;
             auto Left = O.left, Right = O.right;
-            apply(Right, B);
-            apply(Left, A);
 
             BOOST_UBLAS_SAME(Left.size1(), Right.size1()); 
             BOOST_UBLAS_SAME(Left.size2(), Right.size2());
 
+            T **A, **B;
+            auto Lsize1 = Left.size1(), Lsize2 = Left.size2();
+            auto Rsize1 = Right.size1(), Rsize2 = Right.size2();
+
+            A = new T*[Lsize1];
+            for(auto i=0; i<Lsize1; i++) {
+                A[i] = new T[Lsize2];
+            }
+            B = new T*[Rsize1];
+            for(auto i=0; i<Rsize1; i++) {
+                B[i] = new T[Rsize2];
+            }
+
+            apply(Right, B);
+            apply(Left, A);
+            
             auto size1_ = O.size1(), size2_ = O.size2();
-        
-            C.resize(size1_);
+
+            // Pre-allocated
+            /*C.resize(size1_);
             for(auto i=0; i<size1_; i++) {
                 C[i].resize(size2_);
-            }
+            }*/
             add(A, B, C, size1_, size2_);
 
-            for(auto i=0; i<size1_; i++){
-                A[i].clear(); B[i].clear();
+            for(auto i=0; i<Lsize1; i++) {
+                delete [] A[i];
             }
-            A.clear(); B.clear();
+            delete [] A;
+            for(auto i=0; i<Rsize1; i++) {
+                delete []  B[i];
+            }
+            delete [] B;
         }
 
         template<class T1, class T2, class T>
         static void apply(const binop<T1, T2, subOp> &O, std::vector<std::vector<T> > &C) {
-            std::vector<std::vector<T> > A, B;
             auto Left = O.left, Right = O.right;
+            
+            BOOST_UBLAS_SAME(Left.size1(), Right.size1());
+            BOOST_UBLAS_SAME(Left.size2(), Right.size2());
+
+            T **A, **B;
+            auto Lsize1 = Left.size1(), Lsize2 = Left.size2();
+            auto Rsize1 = Right.size1(), Rsize2 = Right.size2();
+
+            A = new T*[Lsize1];
+            for(auto i=0; i<Lsize1; i++) {
+                A[i] = new T[Lsize2];
+            }
+            B = new T*[Rsize1];
+            for(auto i=0; i<Rsize1; i++) {
+                B[i] = new T[Rsize2];
+            }
+
             apply(Right, B);
             apply(Left, A);
 
@@ -3000,25 +3035,34 @@ namespace boost { namespace numeric { namespace ublas {
 
             auto size1_ = O.size1(), size2_ = O.size2();
 
-            C.resize(size1_);
+            /*C.resize(size1_);
             for(auto i=0; i<size1_; i++) {
                 C[i].resize(size2_);
-            }
+            }*/
             subtract(A, B, C, size1_, size2_);
 
-            for(auto i=0; i<size1_; i++){
+            /*for(auto i=0; i<size1_; i++){
                 A[i].clear(); B[i].clear();
             }
-            A.clear(); B.clear();
+            A.clear(); B.clear();*/
+            for(auto i=0; i<Lsize1; i++) {
+                delete [] A[i];
+            }
+            delete [] A;
+            for(auto i=0; i<Rsize1; i++) {
+                delete []  B[i];
+            }
+            delete [] B;
         }
 
         template<class T1, class T2, class T>
-        static void apply(const binop<T1, T2, multOp> &O, T &C) {
+        static void apply(const binop<T1, T2, multOp> &O, T **C) {
+            std::cout << "Entered matrix_expression\n";
             matrix_chain_controller(O, C);
         }
 
         template<class T1, class T2, class E, class T>
-        static void add(T1 &A, T2 &B, E &C, T size1_, T size2_) {
+        static void add(T1 **A, T2 **B, E **C, T size1_, T size2_) {
             for(T i=0; i<size1_; i++) {
                 for(T j=0; j<size2_; j++) {
                     C[i][j] = A[i][j] + B[i][j]; 
@@ -3027,7 +3071,7 @@ namespace boost { namespace numeric { namespace ublas {
         }
 
         template<class T1, class T2, class E, class T>
-        static void subtract(T1 &A, T2 &B, E &C, T size1_, T size2_) {
+        static void subtract(T1 **A, T2 **B, E **C, T size1_, T size2_) {
             for(T i=0; i<size1_; i++) {
                 for(T j=0; j<size2_; j++) {
                     C[i][j] = A[i][j] - B[i][j]; 
@@ -3103,7 +3147,7 @@ namespace boost { namespace numeric { namespace ublas {
         }
 
         template<class E, class T>
-        static void allocate(E &memo, T &C) {
+        static void allocate(E &memo, T **C) {
             for(auto i=0; i<memo.size1; i++) {
                 for(auto j=0; j<memo.size2; j++) {
                     C[i][j] = memo.mat[i][j];
@@ -3113,34 +3157,55 @@ namespace boost { namespace numeric { namespace ublas {
 
 
         template<class T1, class T2, class T, class size_type>
-        static void Chaining(T1 &memo, T2 &splits, long int i, long int j, std::vector<std::vector<T> > &C, size_type &Size) {
+        static void Chaining(T1 &memo, T2 &splits, long int i, long int j, T **C, size_type &Size) {
             
             if(i == j) {
-                Size = getSize(memo[i-1].size1, memo[i-1].size2);
-                C.resize(memo[i-1].size1, std::vector<T>(memo[i-1].size2, 0));
+                //Size = getSize(memo[i-1].size1, memo[i-1].size2);
+                //C.resize(memo[i-1].size1, std::vector<T>(memo[i-1].size2, 0));
                 allocate(memo[i-1], C);
                 return;
             }
 
-            std::vector<std::vector<T> > A, B;
-            size_type sizeA, sizeB; 
-            Chaining(memo, splits, i, splits[i][j], A, sizeA);
-            Chaining(memo, splits, splits[i][j]+1, j, B, sizeB);
-            Size = getSize(std::max(memo[i-1].size1, memo[i-1].size2), 
-                           std::max(memo[j-1].size1, memo[j-1].size2));
+            //std::vector<std::vector<T> > A, B;
+            T **A, **B;
+            size_type Asize1, Asize2;
+            size_type Bsize1, Bsize2;
 
-            C.resize(memo[i-1].size1, std::vector<T>(memo[j-1].size2));
+            Asize1 = memo[i-1].size1;   Asize2 = memo[splits[i][j]-1].size2;
+            Bsize1 = memo[splits[i][j]].size1;      Bsize2 = memo[j-1].size2;
+
+            A = new T*[Asize1];
+            for(size_type i=0; i<Asize1; i++) {
+                A[i] = new T[Asize2];
+            }
+            B = new T*[Bsize1];
+            for(size_type i=0; i<Bsize1; i++) {
+                B[i] = new T[Bsize2]; 
+            }
+
+            Chaining(memo, splits, i, splits[i][j], A, Asize1);
+            Chaining(memo, splits, splits[i][j]+1, j, B, Bsize1);
+            //Size = getSize(std::max(memo[i-1].size1, memo[i-1].size2), 
+            //               std::max(memo[j-1].size1, memo[j-1].size2));
+
+            //C.resize(memo[i-1].size1, std::vector<T>(memo[j-1].size2));
             
+            size_type sqSize = getSize(memo[i-1].size1, std::max(memo[splits[i][j]-1].size2, memo[j-1].size2));
+
             // Strassen's Algo check done
-            productController(A, B, C, Size);
+            productController(A, B, C, 
+                              Asize1, Asize2,
+                              Bsize1, Bsize2,  
+                              sqSize);
             
-            for(size_type z=0; z<memo[i-1].size1; z++) {
-                A[z].clear();
+            for(size_type z=0; z<Asize1; z++) {
+                delete [] A[z];
             }
-            for(size_type z=0; z<memo[j-1].size1; z++) {
-                B[z].clear();
+            delete [] A;
+            for(size_type z=0; z<Bsize1; z++) {
+                delete [] B[z];
             }
-            A.clear(); B.clear();
+            delete [] B;
             
             if(i == 1 && j == splits.size()-1) {
                 memo.clear(); splits.clear();
@@ -3149,7 +3214,7 @@ namespace boost { namespace numeric { namespace ublas {
 
         template<class T1, class T2, class T>
         static void matrix_chain_controller(const binop<T1, T2, multOp> &O, 
-                                            std::vector<std::vector<T> > &C) {
+                                            T **C) {
             std::vector<std::pair<long int, long int> > Dimensions; Dimensions.push_back(std::make_pair(0,0));
             getDimensions(O, Dimensions);
 
@@ -3327,23 +3392,23 @@ namespace boost { namespace numeric { namespace ublas {
         }
 
         template<class T, class size_type>
-        static void productController(std::vector<std::vector<T> > &matA, 
-                                      std::vector<std::vector<T> > &matB, 
-                                      std::vector<std::vector<T> > &matC, 
+        static void productController(T **matA, T **matB, T **matC, 
+                                      size_type Asize1, size_type Asize2,
+                                      size_type Bsize1, size_type Bsize2,
                                       size_type Size) {
             T **A, **B, **C;
             A = new T*[Size]; B = new T*[Size]; C = new T*[Size];
             for(size_type i=0; i<Size; i++) {
                 A[i] = new T[Size](); B[i] = new T[Size](); C[i] = new T[Size]();
             }
-            for(size_type i=0; i<matA.size(); i++) {
-                for(size_type j=0; j<matA[i].size(); j++) {
+            for(size_type i=0; i<Asize1; i++) {
+                for(size_type j=0; j<Asize2; j++) {
                     A[i][j] = matA[i][j];
                 }
             }
 
-            for(size_type i=0; i<matB.size(); i++) {
-                for(size_type j=0; j<matB[i].size(); j++) {
+            for(size_type i=0; i<Bsize1; i++) {
+                for(size_type j=0; j<Bsize2; j++) {
                     B[i][j] = matB[i][j];
                 }
             }
@@ -3354,8 +3419,8 @@ namespace boost { namespace numeric { namespace ublas {
             else{
                 Strassen(Size, A, B, C);
             }
-            for(size_type i=0; i<matC.size(); i++) {
-                for(size_type j=0; j<matC[i].size(); j++) {
+            for(size_type i=0; i<Asize1; i++) {
+                for(size_type j=0; j<Bsize2; j++) {
                     matC[i][j] = C[i][j];
                 }
             }
