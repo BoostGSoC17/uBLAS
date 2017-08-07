@@ -1522,7 +1522,6 @@ namespace detail {
                 m(i,j) = C[i][j];
             }
         }
-
         for(size_type i=0; i<size1_;i++) {
             delete [] C[i];
         }

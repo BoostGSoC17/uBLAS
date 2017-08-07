@@ -3184,8 +3184,7 @@ namespace boost { namespace numeric { namespace ublas {
 
         template<class T1, class T2, class T>
         static BOOST_UBLAS_INLINE
-        void matrix_chain_controller(const binop<T1, T2, multOp> &O, 
-                                            T** &C) {
+        void matrix_chain_controller(const binop<T1, T2, multOp> &O, T** &C) {
             std::vector<std::pair<long long int, long long int> > Dimensions; Dimensions.push_back(std::make_pair(0,0));
             getDimensions(O, Dimensions);
 
