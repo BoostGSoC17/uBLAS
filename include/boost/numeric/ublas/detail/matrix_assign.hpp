@@ -1516,11 +1516,6 @@ namespace detail {
         value_type **C;
         size_type size1_ = O.size1(), size2_ = O.size2();
 
-        C = new value_type*[size1_];
-        for(size_type i=0; i<size1_; i++) {
-            C[i] = new value_type[size2_];
-        }   
-
         O(C);
         for(size_type i=0; i<m.size1(); i++) {
             for(size_type j=0; j<m.size2(); j++) {
