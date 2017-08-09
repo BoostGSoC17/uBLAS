@@ -1470,6 +1470,7 @@ namespace detail {
         typedef basic_full<typename M::size_type> unrestricted;
         matrix_assign<F, unrestricted> (m, e, storage_category (), orientation_category ());
     }
+    
     template<template <class T1, class T2> class F, class R, class M, class E>
     BOOST_UBLAS_INLINE
     void matrix_assign (M &m, const matrix_expression<E> &e) {

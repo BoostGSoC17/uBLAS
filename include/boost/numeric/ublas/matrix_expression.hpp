@@ -3138,9 +3138,9 @@ namespace boost { namespace numeric { namespace ublas {
 
             T **A, **B;
             P dimensionA, dimensionB;
+
             Chaining(O, splits, i, splits[i][j], A, Size, dimensionA);
             Chaining(O, splits, splits[i][j]+1, j, B, Size, dimensionB);
-
             
             dimensionC.first = dimensionA.first;    dimensionC.second = dimensionB.second;
             C = new T*[dimensionC.first];
@@ -3148,12 +3148,11 @@ namespace boost { namespace numeric { namespace ublas {
                 C[i] = new T[dimensionC.second];
             }
 
-
             size_type sqSize = getSize(std::max(dimensionA.first, dimensionA.second), 
                                        std::max(dimensionB.first, dimensionB.second));
             // Strassen's Algo check done
             productController(A, B, C, 
-                              dimensionA.first, dimensionB.second,
+                              dimensionA.first, dimensionA.second,
                               dimensionB.first, dimensionB.second,  
                               sqSize);
             
@@ -3360,16 +3359,84 @@ namespace boost { namespace numeric { namespace ublas {
             delete [] AA; delete [] BB;
         }
 
+        template<class size_type>
+        static bool check(size_type Asize1, size_type Asize2, size_type Bsize2) {
+            typedef long long int lli;
+            lli operations = (lli) Asize1 * Asize2 * Bsize2;
+            if(operations > (1<<28))
+                return true;
+            return false;
+        }
+
+        template<class T, class size_type>
+        static void allocate(T** &A, T** &B, T** &C, size_type Size) {
+            A = new T*[Size]; B = new T*[Size]; C = new T*[Size];
+            for(size_type i=0; i<Size; i++) {
+                A[i] = new T[Size](); B[i] = new T[Size](); C[i] = new T[Size]();
+            }
+        }
+
+        template<class T, class size_type>
+        static void allocate(T** &A, T** &B, T** &C, 
+                      size_type Asize1, size_type Asize2,
+                      size_type Bsize1, size_type Bsize2) {
+            A = new T*[Asize1]; B = new T*[Bsize1]; C = new T*[Asize1];
+            for(size_type i=0; i<Asize1; i++) {
+                A[i] = new T[Asize2];
+            }
+            for(size_type i=0; i<Bsize1; i++) {
+                B[i] = new T[Bsize2];
+            }
+            for(size_type i=0; i<Asize1; i++) {
+                C[i] = new T[Bsize2];
+            }
+        }
+
+        template<class T, class size_type>
+        static void deallocate(T** &A, T** &B, T** &C, size_type Size) {
+            for(size_type i=0; i<Size; i++) {
+                delete [] A[i]; delete [] B[i]; delete [] C[i];
+            }
+            delete [] A; delete [] B; delete [] C;
+        }
+
+        template<class T, class size_type>
+        static void deallocate(T** &A, T** &B, T** &C, 
+                      size_type Asize1, size_type Asize2,
+                      size_type Bsize1, size_type Bsize2) {
+            for(size_type i=0; i<Asize1; i++) {
+                delete [] A[i];
+            }
+            delete [] A;
+
+            for(size_type i=0; i<Bsize1; i++) {
+                delete [] B[i];
+            }
+            delete [] B;
+            for(size_type i=0; i<Asize1; i++) {
+                delete [] C[i];
+            }
+            delete [] C;
+        }
+
         template<class T, class size_type>
         static void productController(T** &matA, T** &matB, T** &matC, 
                                       size_type Asize1, size_type Asize2,
                                       size_type Bsize1, size_type Bsize2,
                                       size_type Size) {
             T **A, **B, **C;
-            A = new T*[Size]; B = new T*[Size]; C = new T*[Size];
-            for(size_type i=0; i<Size; i++) {
-                A[i] = new T[Size](); B[i] = new T[Size](); C[i] = new T[Size]();
+
+            bool isLarge = check(Asize1, Asize2, Bsize2);
+            
+            if(!isLarge) {
+                allocate(A, B, C, 
+                         Asize1, Asize2,
+                         Bsize1, Bsize2);
             }
+            else {
+                allocate(A, B, C, Size);
+            }
+            
             for(size_type i=0; i<Asize1; i++) {
                 for(size_type j=0; j<Asize2; j++) {
                     A[i][j] = matA[i][j];
@@ -3382,8 +3449,8 @@ namespace boost { namespace numeric { namespace ublas {
                 }
             }
             
-            if(Size < 512) {
-                Trivial(A, B, C, Size, Size, Size);
+            if(!isLarge) {
+                Trivial(A, B, C, Asize1, Bsize2, Asize2);
             }
             else{
                 Strassen(Size, A, B, C);
@@ -3394,10 +3461,14 @@ namespace boost { namespace numeric { namespace ublas {
                 }
             }
 
-            for(size_type i=0; i<Size; i++) {
-                delete [] A[i]; delete [] B[i]; delete [] C[i];
+            if(!isLarge) {
+                deallocate(A, B, C, 
+                         Asize1, Asize2,
+                         Bsize1, Bsize2);
             }
-            delete [] A; delete [] B; delete [] C;
+            else{
+                deallocate(A, B, C, Size);
+            }
         }
     };
 
