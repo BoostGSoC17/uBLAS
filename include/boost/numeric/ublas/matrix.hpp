@@ -1423,6 +1423,14 @@ namespace boost { namespace numeric {
             matrix_assign<scalar_assign> (*this, ae);
         }
 
+        template<class E1, class E2, class OT>
+        BOOST_UBLAS_INLINE
+        fixed_matrix(const binop<E1, E2, OT> &O):
+            matrix_container<self_type> (),
+            data_ () {
+            chain_matrix_assign (*this, O);
+        }
+
         /// \brief Construct a fixed_matrix from a list of values
         /// The list may be included in curly braces. Typical syntax is choices are :
         /// fixed_matrix<double, 2,2> v = { 1, 2, 3, 4 } or fixed_matrix<double,4> v( {1, 2, 3, 4} ) or fixed_matrix<double,2,2> v( 1, 2, 3, 4 )
@@ -2451,7 +2459,7 @@ namespace boost { namespace numeric {
         template<class E1, class E2>
         BOOST_UBLAS_INLINE
         bounded_matrix (const binop<E1, E2, multOp> &o):
-            matrix_type (matrix_chain_controller(o)) {}
+            matrix_type (o) {}
         BOOST_UBLAS_INLINE
         ~bounded_matrix () {}
 
@@ -5297,7 +5305,14 @@ namespace boost { namespace numeric {
             matrix_assign<scalar_assign> (*this, ae);
         }
 
-        template<class E1, class E2>
+        template<class E1, class E2, class OT>
+        BOOST_UBLAS_INLINE
+        c_matrix(const binop<E1, E2, OT> &o) :
+            size1_ (o.size1()), size2_ (o.size2()), data_(layout_type::storage_size(size1_, size2_)) {
+                chain_matrix_assign(*this, o);  
+        }
+
+        /*template<class E1, class E2>
         BOOST_UBLAS_INLINE
         c_matrix (const binop<E1, E2, multOp> &o) {
             std::vector<std::pair<long int, long int> > Dimensions; Dimensions.push_back(std::make_pair(0, 0));
@@ -5307,7 +5322,7 @@ namespace boost { namespace numeric {
                 bad_size ().raise ();
             matrix<T> temporary = matrix_chain_controller(o);
             matrix_data_assign(*this, temporary);
-        }
+        }*/
 
         BOOST_UBLAS_INLINE
         c_matrix (const matrix<T> &m):
