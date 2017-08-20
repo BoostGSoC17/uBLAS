@@ -1399,13 +1399,14 @@ namespace boost { namespace numeric { namespace ublas {
         static BOOST_UBLAS_INLINE
         void assign_values(const matrix_expression<E1> &e1,
                            const matrix_expression<E2> &e2,
-                           T **A, 
-                           T **B,
-                           T **C, 
+                           T** &A, 
+                           T** &B,
+                           T** &C, 
                            bool isLarge) {
             
             for(int i=0; i<e1().size1(); i++) {
                 for(int j=0; j<e1().size2(); j++) {
+                    //std::cout << i << "\t" << j << "---------->>>>>>>>>>>\n";
                     A[i][j] = e1 () (i,j);
                 }
             }
@@ -1436,6 +1437,8 @@ namespace boost { namespace numeric { namespace ublas {
             // ...
             value_type **A, **B;
             bool isLarge = check(e1, e2);
+            
+            BOOST_UBLAS_SAME(e1().size2(), e2().size1());
             
             if(isLarge) {
                 size_type size = getSize(e1().size1(), e1().size2(), e2().size1(), e2().size2());

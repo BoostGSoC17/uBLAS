@@ -14,8 +14,6 @@
 #ifndef _BOOST_UBLAS_MATRIX_
 #define _BOOST_UBLAS_MATRIX_
 
-#include <vector>
-#include <utility>
 #include <boost/config.hpp>
 #include <boost/numeric/ublas/vector.hpp>
 #include <boost/numeric/ublas/matrix_expression.hpp>
@@ -1276,6 +1274,7 @@ namespace boost { namespace numeric {
 #endif
         typedef typename A::size_type size_type;
         typedef typename A::difference_type difference_type;
+        typedef unary_functor functor_type;
         typedef T value_type;
         typedef const T &const_reference;
         typedef T &reference;
@@ -5117,8 +5116,10 @@ namespace boost { namespace numeric {
         template<class E1, class E2, class OT>
         BOOST_UBLAS_INLINE
         c_matrix(const binop<E1, E2, OT> &o) :
-            size1_ (o.size1()), size2_ (o.size2()), data_(layout_type::storage_size(size1_, size2_)) {
-                chain_matrix_assign(*this, o);  
+            size1_ (o.size1()), size2_ (o.size2()) {
+            if(size1_ > N || size2_ > M)
+                bad_size ().raise();
+            chain_matrix_assign(*this, o);  
         }
 
         BOOST_UBLAS_INLINE
