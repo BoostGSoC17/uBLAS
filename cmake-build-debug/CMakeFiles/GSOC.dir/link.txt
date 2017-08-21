@@ -1,1 +1,0 @@
-/usr/bin/c++   -g   CMakeFiles/GSOC.dir/main.cpp.o  -o GSOC 
