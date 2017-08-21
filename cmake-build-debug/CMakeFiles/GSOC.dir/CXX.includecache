@@ -7,8 +7,10 @@
 #IncludeRegexTransform: 
 
 /home/drstrange/GSOC/main.cpp
-boostAlt/numeric/ublas/matrix.hpp
+boost/numeric/ublas/matrix.hpp
 -
-boostAlt/numeric/ublas/io.hpp
+boost/numeric/ublas/io.hpp
+-
+boost/numeric/ublas/storage.hpp
 -
 
